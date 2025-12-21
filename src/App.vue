@@ -6,7 +6,7 @@ import { ref } from 'vue'
 const name = ref('Unknown')
 
 const getName = async () => {
-  const res = await fetch('/api/')
+  const res = await fetch('/api/123')
   const data = await res.json()
   name.value = data.name
 }

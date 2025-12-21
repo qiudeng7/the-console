@@ -1,8 +1,10 @@
-import { existsSync, readdirSync } from 'node:fs';
-import path from 'node:path';
+import { type RouteModule, buildRoutes } from "./buildRoutes";
+import { createErrorResponse } from "../response";
+export { defineMyHandler } from "./defineMyHandler"
+import { ifPathContainsDoNothingList } from "./config";
 
 /**
- * 处理 HTTP 请求并根据文件系统动态路由到相应的处理器
+ * 处理 HTTP 请求并根据预构建的路由注册表路由到相应的处理器
  *
  * 支持的路由模式：
  * - 精确匹配：/api/users → server/api/users.ts
@@ -15,98 +17,77 @@ import path from 'node:path';
  * @param ctx - Cloudflare Workers 执行上下文
  * @returns Promise<Response> - HTTP 响应
  */
-export async function handleMyRoute(request: Request, env: any, ctx: any): Promise<Response> {
+export async function handleMyRoute(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const requestPath = url.pathname;
 
-    // 分割路径
-    const segments = requestPath.split('/').filter(Boolean);
+    // 对于某些路径，空响应
+    for (const item of ifPathContainsDoNothingList) {
+        if (requestPath.includes(item))
+            return Response.json({})
+    }
 
     // 只处理 /api 路由
-    if (segments.length === 0 || segments[0] !== 'api') {
-        return routerErrorResponse("路由必须以 '/api' 开头");
+    if (!requestPath.startsWith('/api/')) {
+        return createErrorResponse({
+            message: "路由必须以 '/api' 开头"
+        });
     }
 
-    // 移除 'api' 前缀，获取实际的路由段
-    const routeSegments = segments.slice(1);
+    // 匹配已定义路由和实际请求的资源路径
+    let match: { handler: () => Promise<RouteModule>, params: Record<string, string> } | null = null;
 
-    // 如果没有路由段，返回 404
-    if (routeSegments.length === 0) {
-        return routerErrorResponse('未指定具体的 API 路由');
-    }
+    // 从import.meta.glob模块路径中构建路由
+    // TODO 从modulePath到routes的构建步骤在每一次请求都会运行，虽然只是字符串处理不太影响性能，但最好还是能优化到vite构建期
+    const routes = buildRoutes()
 
-    // 根据请求查询路由处理器，动态处理器将被标记到params
-    const apiDir = path.join(process.cwd(), 'server', 'api');
-    let currentDir = apiDir;
-    const params: Record<string, string> = {};
+    for (const route of routes) {
+        const routeSegments = route.path.split('/').filter(Boolean);
+        const requestSegments = requestPath.split('/').filter(Boolean);
 
-    for (let i = 0; i < routeSegments.length; i++) {
-        const segment = routeSegments[i];
-
-        // 1. 检查是否有精确匹配的目录
-        const exactDirPath = path.join(currentDir, segment);
-        if (existsSync(exactDirPath)) {
-            currentDir = exactDirPath;
+        // 路径段数必须相等
+        if (routeSegments.length !== requestSegments.length) {
             continue;
         }
 
-        // 2. 检查是否有精确匹配的文件
-        const exactFilePath = path.join(currentDir, `${segment}.ts`);
-        if (existsSync(exactFilePath)) {
-            return await invokeMyHandler(exactFilePath, params, request, env, ctx);
+        const params: Record<string, string> = {};
+        let isMatch = true;
+
+        // 逐段匹配路径
+        for (let i = 0; i < routeSegments.length; i++) {
+            const routeSegment = routeSegments[i];
+            const requestSegment = requestSegments[i];
+
+            if (routeSegment.startsWith(':')) {
+                // 动态参数匹配，提取参数名和值
+                const paramName = routeSegment.slice(1);
+                params[paramName] = requestSegment;
+            } else if (routeSegment !== requestSegment) {
+                // 静态路径不匹配
+                isMatch = false;
+                break;
+            }
         }
 
-        // 3. 检查是否有动态路由目录 [param]
-        const filesInDir = readdirSync(currentDir);
-        const dynamicDir = filesInDir.find(file =>
-            file.startsWith('[') && file.endsWith(']') && !file.includes('.ts')
-        );
-
-        if (dynamicDir) {
-            const paramName = dynamicDir.slice(1, -1);
-            params[paramName] = segment;
-            currentDir = path.join(currentDir, dynamicDir);
-            continue;
+        if (isMatch) {
+            match = {
+                handler: route.handler,
+                params
+            };
+            break;
         }
-
-        // 4. 检查是否有动态路由文件 [param].ts
-        const dynamicFile = filesInDir.find(file =>
-            file.startsWith('[') && file.endsWith('].ts')
-        );
-
-        if (dynamicFile) {
-            const paramName = dynamicFile.slice(1, -3);
-            params[paramName] = segment;
-            return await invokeMyHandler(path.join(currentDir, dynamicFile), params, request, env, ctx);
-        }
-
-        // 5. 都没找到，返回错误
-        return routerErrorResponse(`路由 '${requestPath}' 未找到`);
     }
 
-    // 检查是否有 index.ts 文件
-    const indexPath = path.join(currentDir, 'index.ts');
-    if (existsSync(indexPath)) {
-        return await invokeMyHandler(indexPath, params, request, env, ctx);
+    if (!match) {
+        return createErrorResponse({
+            message: `路由 '${requestPath}' 未找到`
+        });
     }
 
-    return routerErrorResponse(`路由 '${requestPath}' 未找到`);
-}
-
-/**
- * 动态导入并执行路由处理器文件
- *
- * @param filePath - 路由处理器文件的绝对路径
- * @param routerParams - 从 URL 路径中提取的路由参数
- * @param request - 原始 HTTP 请求对象
- * @param env - Cloudflare Workers 环境变量
- * @param ctx - Cloudflare Workers 执行上下文
- * @returns Promise<Response> - 处理器执行后的 HTTP 响应
- */
-async function invokeMyHandler(filePath: string, routerParams: Record<string, string>, request: Request, env: any, ctx: any): Promise<Response> {
+    // 调用handler
     try {
-        // 动态导入路由处理器
-        const module = await import(filePath);
+        // 使用 Vite 预构建的模块加载器动态导入处理器
+        const module = await match.handler();
         const handler = module.default;
 
         if (typeof handler !== 'function') {
@@ -115,77 +96,12 @@ async function invokeMyHandler(filePath: string, routerParams: Record<string, st
 
         // 创建带有 params 的增强 request 对象
         const enhancedRequest = Object.create(request);
-        enhancedRequest.params = routerParams;
+        enhancedRequest.params = match.params;
 
-        return handler(enhancedRequest, env, ctx);
+        // 使用 defineMyHandler 包装的函数格式
+        return handler({ request: enhancedRequest, routerParams: match.params, env, ctx });
     } catch (error) {
         console.error('路由导入错误:', error);
-        return new Response(JSON.stringify({ error: '路由处理器加载失败' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return createErrorResponse('路由处理器加载失败')
     }
-}
-
-/**
- * 自定义路由处理器的参数类型定义
- */
-export type MyHandlerParams = {
-    /** HTTP 请求对象，包含 params 属性用于访问路由参数 */
-    request: Request,
-    /** 从 URL 路径中提取的路由参数，如 { id: "123" } */
-    routerParams: Record<string, string>,
-    /** Cloudflare Workers 环境变量 */
-    env: Env,
-    /** Cloudflare Workers 执行上下文 */
-    ctx: ExecutionContext,
-}
-
-/**
- * 为自定义路由处理器提供统一的异常处理包装器
- *
- * 使用示例：
- * ```typescript
- * export default defineMyHandler(({ request, routerParams, env, ctx }) => {
- *   const { id } = routerParams;
- *   return new Response(JSON.stringify({ id }));
- * });
- * ```
- *
- * @param myHandler - 用户定义的路由处理函数
- * @returns 包装后的处理函数，包含统一的错误处理逻辑
- */
-export function defineMyHandler(
-    myHandler: (myHandlerParams: MyHandlerParams) => Response
-) {
-    // 为所有handler包装异常处理
-    return function errorWrapper(myHandlerParams: MyHandlerParams) {
-        try {
-            return myHandler(myHandlerParams)
-        } catch (e) {
-            const errorMessage = `myHandler error: ${e}`
-            const body = JSON.stringify({
-                error: errorMessage
-            })
-            return new Response(body, {
-                status: 500,
-                statusText: errorMessage,
-                headers: { 'Content-Type': 'application/json' }
-            })
-        }
-    }
-}
-
-/**
- * 创建标准化的路由错误响应
- *
- * @param msg - 错误消息
- * @returns Response - 404 状态码的 JSON 错误响应
- */
-function routerErrorResponse(msg: string) {
-    return new Response(JSON.stringify({ error: msg }), {
-        status: 404,
-        statusText: `router error: ${msg}`,
-        headers: { 'Content-Type': 'application/json' }
-    });
 }
