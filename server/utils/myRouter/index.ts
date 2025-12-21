@@ -1,4 +1,4 @@
-import { type RouteModule, buildRoutes } from "./buildRoutes";
+import { type RouteModule, routes } from "./buildRoutes";
 import { createErrorResponse } from "../response";
 export { defineMyHandler } from "./defineMyHandler"
 import { ifPathContainsDoNothingList } from "./config";
@@ -36,10 +36,6 @@ export async function handleMyRoute(request: Request, env: Env, ctx: ExecutionCo
 
     // 匹配已定义路由和实际请求的资源路径
     let match: { handler: () => Promise<RouteModule>, params: Record<string, string> } | null = null;
-
-    // 从import.meta.glob模块路径中构建路由
-    // TODO 从modulePath到routes的构建步骤在每一次请求都会运行，虽然只是字符串处理不太影响性能，但最好还是能优化到vite构建期
-    const routes = buildRoutes()
 
     for (const route of routes) {
         const routeSegments = route.path.split('/').filter(Boolean);

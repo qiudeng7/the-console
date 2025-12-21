@@ -17,7 +17,8 @@ export interface RouteModule {
  *   './api/users/[id].ts': [Function: ./api/users/[id].ts]
  * }
  */
-const apiModules = import.meta.glob<RouteModule>('./api/**/*.ts');
+const apiModules = import.meta.glob<RouteModule>('../../api/**/*.ts');
+
 
 /**
  * 构建路由数组，将 Vite glob 收集的文件路径转换为运行时可用的路由配置
@@ -45,7 +46,7 @@ export function buildRoutes() {
     for (const [filePath, moduleLoader] of Object.entries(apiModules)) {
         // 直接在这里处理路径转换
         const routePath = filePath
-            .replace(/^\.\//, '')            // 移除开头的 ./
+            .replace(/^\.\.\/\.\.\//, '')     // 移除开头的 ../../
             .replace(/\.ts$/, '')           // 移除 .ts 后缀
             .replace(/\[([^\]]+)\]/g, ':$1') // [id] → :id
             .replace(/\/index$/, '');        // 移除 /index 后缀
@@ -61,5 +62,8 @@ export function buildRoutes() {
     // 按路径长度降序排列，确保更具体的路由优先匹配
     // 例如：/api/users/:id 会排在 /api/:id 前面
     routes.sort((a, b) => b.path.split('/').length - a.path.split('/').length);
+
     return routes;
 }
+
+export const routes = buildRoutes()
