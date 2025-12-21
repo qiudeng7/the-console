@@ -17,25 +17,14 @@ export default {
 
 ### 2. 创建路由
 
-#### 简单路由
-```typescript
-// server/api/users.ts
-// 将会命中 /api/users 
-import { defineMyHandler } from '../utils/myRouter';
-
-export default defineMyHandler(({ request, routerParams }) => {
-    return new Response(JSON.stringify({ users: ['Alice', 'Bob'] }));
-});
-```
-
-#### 动态参数路由
 ```typescript
 // server/api/[id].ts
 import { defineMyHandler } from '../utils/myRouter';
+import { createSuccessResponse } from '../utils/response';
 
 export default defineMyHandler(({ request, routerParams }) => {
     const { id } = routerParams;
-    return new Response(JSON.stringify({ id, name: `User ${id}` }));
+    return createSuccessResponse({ id, name: `User ${id}` });
 });
 ```
 
@@ -64,17 +53,43 @@ type MyHandlerParams = {
   - `server/api/users/index.ts`
 
 
+## 3. 配置说明
+
+### 路径过滤配置
+
+```typescript
+// server/utils/myRouter/config.ts
+export const ifPathContainsDoNothingList: string[] = [
+    "/.well-known/"  // 对于这些路径，路由不做任何响应，直接返回空 JSON
+];
+```
+
+### 统一响应格式
+
+路由系统使用 `@server/utils/response` 提供的统一响应工具：
+
+- `createSuccessResponse(data)` - 创建成功响应
+- `createErrorResponse(message, options?)` - 创建错误响应
+
 ## 最佳实践
 
 ```typescript
+import { defineMyHandler } from '../utils/myRouter';
+import { createSuccessResponse, createErrorResponse } from '../utils/response';
+
 export default defineMyHandler(({ request, routerParams }) => {
     switch (request.method) {
         case 'GET':
-            return handleGet(routerParams);
+            return createSuccessResponse(handleGet(routerParams));
         case 'POST':
-            return handlePost(await request.json());
+            try {
+                const data = await request.json();
+                return createSuccessResponse(handlePost(data));
+            } catch (error) {
+                return createErrorResponse('Invalid JSON data', { status: 400 });
+            }
         default:
-            return new Response('Method Not Allowed', { status: 405 });
+            return createErrorResponse('Method Not Allowed', { status: 405 });
     }
 });
 ```
