@@ -1,42 +1,30 @@
-# the-console
+# The Console
 
-This template should help get you started developing with Vue 3 in Vite.
+需求如下：
 
-## Recommended IDE Setup
+1.  cloudflare serverless架构
+2.  管理端发布和监控任务
+3.  员工端执行并任务
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-## Recommended Browser Setup
+## 设计
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+> cloudflare 免费额度只有 5G sqllite 和 10G 对象存储，对于图片或者pdf格式的任务资源很容易超过这个容量。
+> 
+> 1.  方案一：损失性能，价格最低
+>     1.  用 openlist + 夸克网盘 或者 openlist + github加密分块，虽然需要二次网络IO但是很便宜。
+>     2.  也可以用cloudflare的存储做缓存。
+> 2.  方案二：花钱
+>     1.  直接升级cloudflare计划，对象存储本身就不贵。
 
-## Type Support for `.vue` Imports in TS
+### 文件结构
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+文件结构总体上是一个vite-vue项目，但是多了一个server，是cloudlfare的后端项目，以下主要对cloudflare 后端的结构规范做说明
 
-## Customize configuration
+- `server/` 后端目录
+  - `api/` 端点目录
+  - `utils/` 工具目录，每个工具都有自己的readme供参考。
+    - `myRotuer` 适用于 cloudflare vite 架构的动态文件路由
+    - `response` 统一构造错误和成功响应
+  - `index.ts` 导出cloudflare可识别的 serverless 后端模块
 
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-pnpm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-pnpm dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-pnpm build
-```
