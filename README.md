@@ -10,11 +10,11 @@
 
 技术特点：
 
-1. 在 cloudflare worker 实现类似nuxt/next的动态文件路由
-   1. 难点在于在构建前后文件结构是不同的，运行时如何动态导入构建时的文件结构？
-   2. 通过 vite 的 `import.meta.glob` 特性，可以实现运行时访问构建时路由模块结构，形如`{[buildTimeModulePath]: [moduleExports]}`
-   3. 然后把`[buildTimeModulePath]`转化成 `[dynamicRoutes]`，过程形如 `./api/users/[id].ts` => `/api/users/:id` (嵌套动态路由)，或者 `./api/users/index.ts` => `/api/users` (索引路由)，就可以得到路由表。在运行时把实际的 requestPath 按照路由表匹配，就可以找到处理该request的handler。
-   4. TODO: `[buildTimeModulePath]`到`[dynamicRoutes]`的转化只需要在构建期执行一次，但是在目前的实现中由于serverless的特点，每次request都会执行一次，需要优化。但是serverless的运行方式似乎和我想的不一样，看起来不是进程级别的重启，参考 https://orm.drizzle.team/docs/perf-serverless 。
+1. 在 cloudflare-vite 项目实现类似nuxt/next的动态文件路由
+   1. 难点在于在构建前后文件结构是不同的，运行时如何动态导入构建时的文件结构？细节参考[myRouter/readme](./server/utils/myRouter/readme.md)
+   2. TODO: `[buildTimeModulePath]`到`[dynamicRoutes]`的转化只需要在构建期执行一次，但是在目前的实现中由于serverless的特点，每次request都会执行一次，需要优化。但是serverless的运行方式似乎和我想的不一样，看起来不是进程级别的重启，参考 https://orm.drizzle.team/docs/perf-serverless 。
+2. 在 cloudflare-vite 项目使用 drizzle ORM
+   1. 难点在于理解 worker、drizzle-kit、drizzle-orm在开发环境和生产环境的行为方式。
 
 ## 设计
 
