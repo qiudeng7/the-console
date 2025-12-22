@@ -6,14 +6,23 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "the-console",
 	"compatibility_date": "2025-12-18",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"main": "server/index.ts",
 	"assets": {
 		"not_found_handling": "single-page-application"
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "the_console",
+			"database_name": "the-console",
+			"database_id": "a0f75d4f-33ed-45af-9f29-3fbd7d672781"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
