@@ -74,7 +74,7 @@ export function createErrorResponse(
  * @param data 响应数据
  * @returns Response 对象
  */
-export function createSuccessResponse(data: Object) {
+export function createSuccessResponse(data: any) {
     // 返回统一格式的成功响应
     return Response.json({
         time: new Date().toLocaleString(), // 响应时间戳
