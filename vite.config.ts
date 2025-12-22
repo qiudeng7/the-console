@@ -23,7 +23,7 @@ export default defineConfig({
 		alias: {
 			'@': fileURLToPath(new URL('./src', import.meta.url)),
 			...createAlias({
-				"#server/*": "./server/*",
+				"#server": "./server",
 				"#drizzle-client": "./server/utils/drizzle/client"
 			})
 		},
