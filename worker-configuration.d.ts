@@ -6,6 +6,7 @@ declare namespace Cloudflare {
 		mainModule: typeof import("./server/index");
 	}
 	interface Env {
+		JWT_SECRET: string;
 	}
 }
 interface Env extends Cloudflare.Env {}

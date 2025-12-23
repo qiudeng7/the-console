@@ -1,4 +1,3 @@
-import { error } from "console"
 import { createErrorResponse } from "../response"
 
 /**
@@ -25,17 +24,14 @@ export function defineMyHandler(
         env: Env,
         /** Cloudflare Workers 执行上下文 */
         ctx: ExecutionContext,
-    }) => Response
+    }) => Response | Promise<Response>
 ) {
     // 为所有handler包装异常处理
-    return function errorWrapper(myHandlerParams: any) {
+    return async function errorWrapper(myHandlerParams: any) {
         try {
-            return myHandler(myHandlerParams)
+            return await myHandler(myHandlerParams)
         } catch (e) {
             const errorMessage = `myHandler error: ${e}`
-            const body = JSON.stringify({
-                error: errorMessage
-            })
 
             return createErrorResponse({
                 message: errorMessage,
