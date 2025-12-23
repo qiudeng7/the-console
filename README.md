@@ -32,8 +32,10 @@
 
 - `server/` 后端目录
   - `api/` 端点目录
+  - `database/` schema 和 migrations
   - `utils/` 工具目录，每个工具都有自己的readme供参考。
     - `myRotuer` 适用于 cloudflare vite 架构的动态文件路由
     - `response` 统一构造错误和成功响应
+    - `drizzle` 对drizzle ORM的封装
   - `index.ts` 导出cloudflare可识别的 serverless 后端模块
 
