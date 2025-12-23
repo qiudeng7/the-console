@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { api } from '@/api'
 
 export interface User {
 	id: number
@@ -41,21 +42,15 @@ export const useAuthStore = defineStore('auth', () => {
 	async function register(email: string, password: string) {
 		isLoading.value = true
 		try {
-			const response = await fetch('/api/auth/register', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password })
-			})
+			const { user: registerUser, token: userToken } = await api.post<{ user: User; token: string }>(
+				'/api/auth/register',
+				{ email, password },
+				{ skipErrorHandler: true }
+			)
 
-			const data = await response.json()
-
-			if (!data.success) {
-				throw new Error(data.error || '注册失败')
-			}
-
-			user.value = data.data.user
-			token.value = data.data.token
-			saveToLocalStorage(data.data.user, data.data.token)
+			user.value = registerUser
+			token.value = userToken
+			saveToLocalStorage(registerUser, userToken)
 
 			return { success: true }
 		} catch (error: any) {
@@ -69,21 +64,15 @@ export const useAuthStore = defineStore('auth', () => {
 	async function login(email: string, password: string) {
 		isLoading.value = true
 		try {
-			const response = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password })
-			})
+			const { user: loginUser, token: userToken } = await api.post<{ user: User; token: string }>(
+				'/api/auth/login',
+				{ email, password },
+				{ skipErrorHandler: true }
+			)
 
-			const data = await response.json()
-
-			if (!data.success) {
-				throw new Error(data.error || '登录失败')
-			}
-
-			user.value = data.data.user
-			token.value = data.data.token
-			saveToLocalStorage(data.data.user, data.data.token)
+			user.value = loginUser
+			token.value = userToken
+			saveToLocalStorage(loginUser, userToken)
 
 			return { success: true }
 		} catch (error: any) {
@@ -99,24 +88,11 @@ export const useAuthStore = defineStore('auth', () => {
 
 		isLoading.value = true
 		try {
-			const response = await fetch('/api/auth/me', {
-				headers: {
-					'Authorization': `Bearer ${token.value}`
-				}
-			})
-
-			const data = await response.json()
-
-			if (data.success) {
-				user.value = data.data.user
-				saveToLocalStorage(data.data.user, token.value)
-			} else {
-				// token 无效，清除状态
-				logout()
-			}
+			const { user: fetchedUser } = await api.get<{ user: User }>('/api/auth/me')
+			user.value = fetchedUser
+			saveToLocalStorage(fetchedUser, token.value)
 		} catch (error) {
-			// 请求失败，清除状态
-			logout()
+			// 401 会自动触发 logout，这里不需要再处理
 		} finally {
 			isLoading.value = false
 		}
