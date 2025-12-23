@@ -28,4 +28,7 @@ export const Task = sqliteTable("task_table", {
     tag: text(),
     description: text(),
     status: text(),
+    createdByUserId: int().notNull().references(() => User.id),
+    assignedToUserId: int().references(() => User.id),
+    updatedAt: text().default(""),
 });

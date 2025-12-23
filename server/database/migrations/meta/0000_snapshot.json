@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "412e32ac-71d5-46ab-ac40-dea635d229d9",
+  "id": "0e5d7dfb-21a7-4953-94fc-42822abaebf3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "task_table": {
@@ -20,7 +20,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'12/22/2025, 2:23:00 PM'"
+          "default": "'12/23/2025, 10:53:10 AM'"
         },
         "deletedAt": {
           "name": "deletedAt",
@@ -64,10 +64,59 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "createdByUserId": {
+          "name": "createdByUserId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "assignedToUserId": {
+          "name": "assignedToUserId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "''"
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "task_table_createdByUserId_user_table_id_fk": {
+          "name": "task_table_createdByUserId_user_table_id_fk",
+          "tableFrom": "task_table",
+          "tableTo": "user_table",
+          "columnsFrom": [
+            "createdByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "task_table_assignedToUserId_user_table_id_fk": {
+          "name": "task_table_assignedToUserId_user_table_id_fk",
+          "tableFrom": "task_table",
+          "tableTo": "user_table",
+          "columnsFrom": [
+            "assignedToUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -88,7 +137,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'12/22/2025, 2:23:00 PM'"
+          "default": "'12/23/2025, 10:53:10 AM'"
         },
         "deletedAt": {
           "name": "deletedAt",
