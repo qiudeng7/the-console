@@ -6,7 +6,14 @@
       "idx": 0,
       "version": "6",
       "when": 1766458390114,
-      "tag": "0000_foamy_red_skull",
+      "tag": "0000_add_user_task_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1766459972047,
+      "tag": "0001_add_user_role_field",
       "breakpoints": true
     }
   ]
