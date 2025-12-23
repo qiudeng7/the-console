@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useTaskStore } from '@/stores/task'
-import type { TaskStatus } from '@/types/task'
-import type { Task } from '@/types/task'
+import type { TaskStatus, Task } from '@/types/task'
 
 const taskStore = useTaskStore()
 
@@ -85,9 +84,9 @@ onMounted(async () => {
 							<h3 class="text-lg font-semibold text-gray-900">{{ task.title }}</h3>
 							<span
 								class="px-2 py-1 text-xs rounded"
-								:class="getStatusInfo(task.status).color"
+								:class="getStatusInfo(task.status)?.color"
 							>
-								{{ getStatusInfo(task.status).label }}
+								{{ getStatusInfo(task.status)?.label }}
 							</span>
 						</div>
 
@@ -136,38 +135,38 @@ onMounted(async () => {
 				<div class="p-6 space-y-6">
 					<!-- 标题和状态 -->
 					<div class="flex items-center gap-3">
-						<h3 class="text-2xl font-bold text-gray-900">{{ selectedTask.title }}</h3>
+						<h3 class="text-2xl font-bold text-gray-900">{{ selectedTask!.title }}</h3>
 						<span
 							class="px-3 py-1 text-sm rounded"
-							:class="getStatusInfo(selectedTask.status).color"
+							:class="getStatusInfo(selectedTask!.status)?.color"
 						>
-							{{ getStatusInfo(selectedTask.status).label }}
+							{{ getStatusInfo(selectedTask!.status)?.label }}
 						</span>
 					</div>
 
 					<!-- 描述 -->
-					<div v-if="selectedTask.description">
+					<div v-if="selectedTask!.description">
 						<h4 class="text-sm font-medium text-gray-700 mb-2">任务描述</h4>
-						<p class="text-gray-600">{{ selectedTask.description }}</p>
+						<p class="text-gray-600">{{ selectedTask!.description }}</p>
 					</div>
 
 					<!-- 元信息 -->
 					<div class="grid grid-cols-2 gap-4">
-						<div v-if="selectedTask.category">
+						<div v-if="selectedTask!.category">
 							<h4 class="text-sm font-medium text-gray-700 mb-1">分类</h4>
-							<p class="text-gray-900">{{ selectedTask.category }}</p>
+							<p class="text-gray-900">{{ selectedTask!.category }}</p>
 						</div>
-						<div v-if="selectedTask.tag">
+						<div v-if="selectedTask!.tag">
 							<h4 class="text-sm font-medium text-gray-700 mb-1">标签</h4>
-							<p class="text-gray-900">{{ selectedTask.tag }}</p>
+							<p class="text-gray-900">{{ selectedTask!.tag }}</p>
 						</div>
 						<div>
 							<h4 class="text-sm font-medium text-gray-700 mb-1">创建时间</h4>
-							<p class="text-gray-900">{{ selectedTask.createdAt }}</p>
+							<p class="text-gray-900">{{ selectedTask!.createdAt }}</p>
 						</div>
 						<div>
 							<h4 class="text-sm font-medium text-gray-700 mb-1">更新时间</h4>
-							<p class="text-gray-900">{{ selectedTask.updatedAt }}</p>
+							<p class="text-gray-900">{{ selectedTask!.updatedAt }}</p>
 						</div>
 					</div>
 				</div>

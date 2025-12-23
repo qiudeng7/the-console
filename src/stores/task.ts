@@ -16,7 +16,15 @@ export const useTaskStore = defineStore('task', () => {
 	async function fetchTasks(params?: TaskListParams) {
 		isLoading.value = true
 		try {
-			const result = await api.get<TaskListResponse>('/api/tasks', params || {})
+			const queryParams = new URLSearchParams()
+			if (params?.page) queryParams.append('page', params.page.toString())
+			if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString())
+			if (params?.status) queryParams.append('status', params.status)
+			if (params?.category) queryParams.append('category', params.category)
+			if (params?.search) queryParams.append('search', params.search)
+
+			const url = queryParams.toString() ? `/api/tasks?${queryParams.toString()}` : '/api/tasks'
+			const result = await api.get<TaskListResponse>(url)
 			tasks.value = result.tasks
 			total.value = result.total
 			page.value = result.page

@@ -167,9 +167,9 @@ async function handleUpdateStatus(id: number, status: TaskStatus) {
 						<td class="px-6 py-4 whitespace-nowrap">
 							<select
 								:value="task.status"
-								@change="handleUpdateStatus(task.id, $event.target.value as TaskStatus)"
+								@change="handleUpdateStatus(task.id, ($event.target as HTMLSelectElement).value as TaskStatus)"
 								class="text-xs px-2 py-1 rounded border-0 cursor-pointer"
-								:class="getStatusInfo(task.status).color"
+								:class="getStatusInfo(task.status)?.color"
 							>
 								<option v-for="s in statusOptions" :key="s.value" :value="s.value">
 									{{ s.label }}

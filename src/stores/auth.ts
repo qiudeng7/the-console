@@ -6,6 +6,7 @@ export interface User {
 	id: number
 	email: string
 	role: 'admin' | 'employee'
+	createdAt: string
 }
 
 export const useAuthStore = defineStore('auth', () => {

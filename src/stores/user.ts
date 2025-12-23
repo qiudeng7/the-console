@@ -15,10 +15,14 @@ export const useUserStore = defineStore('user', () => {
 	async function fetchUsers(params?: { page?: number; pageSize?: number; role?: string; search?: string }) {
 		isLoading.value = true
 		try {
-			const result = await api.get<{ users: User[]; total: number; page: number; pageSize: number }>(
-				'/api/users',
-				params || {}
-			)
+			const queryParams = new URLSearchParams()
+			if (params?.page) queryParams.append('page', params.page.toString())
+			if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString())
+			if (params?.role) queryParams.append('role', params.role)
+			if (params?.search) queryParams.append('search', params.search)
+
+			const url = queryParams.toString() ? `/api/users?${queryParams.toString()}` : '/api/users'
+			const result = await api.get<{ users: User[]; total: number; page: number; pageSize: number }>(url)
 			users.value = result.users
 			total.value = result.total
 			page.value = result.page

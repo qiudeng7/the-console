@@ -6,6 +6,6 @@ import { drizzle } from "drizzle-orm/d1";
 
 export function getDrizzleClient(cloudflareEnv: Env) {
     // @ts-ignore
-    const d1Database: D1Database = cloudflareEnv[process.env.D1_BINDING_NAME!]
+    const d1Database: D1Database = cloudflareEnv.the_console
     return drizzle(d1Database)
 }

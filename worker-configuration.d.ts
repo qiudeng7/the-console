@@ -7,6 +7,7 @@ declare namespace Cloudflare {
 	}
 	interface Env {
 		JWT_SECRET: string;
+        the_console: D1Database
 	}
 }
 interface Env extends Cloudflare.Env {}

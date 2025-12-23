@@ -69,7 +69,10 @@ const router = createRouter({
     // 兼容旧路由，根据角色重定向
     {
       path: '/dashboard',
-      name: 'dashboard',
+      redirect: (to) => {
+        const authStore = useAuthStore()
+        return authStore.user?.role === 'admin' ? '/admin/dashboard' : '/employee/tasks'
+      },
       meta: { requiresAuth: true }
     }
   ]
