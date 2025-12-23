@@ -59,6 +59,7 @@ export default defineMyHandler(async ({ request, env }) => {
 		.values({
 			email: body.email,
 			password: body.password, // 明文存储
+			role: 'employee', // 新用户默认为员工
 		})
 		.returning()
 		.get();
@@ -70,6 +71,7 @@ export default defineMyHandler(async ({ request, env }) => {
 		user: {
 			id: newUser.id,
 			email: newUser.email,
+			role: newUser.role,
 		},
 		token
 	});

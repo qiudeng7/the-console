@@ -17,6 +17,7 @@ export const User = sqliteTable("user_table", {
 
     email: text().notNull(),
     password: text().notNull(),
+    role: text().notNull().default('employee'), // 'admin' | 'employee'
 })
 
 export const Task = sqliteTable("task_table", {

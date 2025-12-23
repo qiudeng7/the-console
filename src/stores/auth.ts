@@ -5,6 +5,7 @@ import { api } from '@/api'
 export interface User {
 	id: number
 	email: string
+	role: 'admin' | 'employee'
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -15,6 +16,8 @@ export const useAuthStore = defineStore('auth', () => {
 
 	// 计算属性
 	const isAuthenticated = computed(() => !!user.value)
+	const isAdmin = computed(() => user.value?.role === 'admin')
+	const isEmployee = computed(() => user.value?.role === 'employee')
 
 	// 初始化：从 localStorage 恢复状态
 	function init() {
@@ -109,6 +112,8 @@ export const useAuthStore = defineStore('auth', () => {
 		user,
 		token,
 		isAuthenticated,
+		isAdmin,
+		isEmployee,
 		isLoading,
 		init,
 		register,

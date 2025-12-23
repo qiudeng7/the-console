@@ -10,7 +10,7 @@
 import { defineMyHandler } from "#server/utils/myRouter";
 import { createSuccessResponse, createErrorResponse } from "#server/utils/response";
 import { getDrizzleClient } from "#drizzle-client";
-import { Task } from "#server/database/schema";
+import { Task, User } from "#server/database/schema";
 import { verifyToken, extractTokenFromHeader } from "#server/utils/jwt";
 import { eq, and, like, or } from "drizzle-orm";
 
@@ -45,6 +45,20 @@ export default defineMyHandler(async ({ request, env }) => {
 
 	const drizzle = getDrizzleClient(env);
 
+	// 获取当前用户信息
+	const currentUser = await drizzle
+		.select()
+		.from(User)
+		.where(eq(User.id, userId))
+		.get();
+
+	if (!currentUser) {
+		return createErrorResponse({
+			message: '用户不存在',
+			options: { status: 404 }
+		});
+	}
+
 	// ============================================================
 	// GET /api/tasks - 获取任务列表
 	// ============================================================
@@ -65,7 +79,9 @@ export default defineMyHandler(async ({ request, env }) => {
 	//     pageSize: number
 	//   }
 	// }
-	// 注意：只返回当前用户创建的任务
+	// 权限：
+	//   - admin: 看到自己创建的任务
+	//   - employee: 只能看到分配给自己的任务
 	if (request.method === 'GET') {
 		const url = new URL(request.url);
 		const page = parseInt(url.searchParams.get('page') || '1');
@@ -75,9 +91,17 @@ export default defineMyHandler(async ({ request, env }) => {
 		const search = url.searchParams.get('search');
 
 		const conditions = [
-			eq(Task.deletedAt, ''),
-			eq(Task.createdByUserId, userId)
+			eq(Task.deletedAt, '')
 		];
+
+		// 根据角色设置不同的查询条件
+		if (currentUser.role === 'employee') {
+			// 员工只能看到分配给自己的任务
+			conditions.push(eq(Task.assignedToUserId, userId));
+		} else {
+			// admin 看到自己创建的任务
+			conditions.push(eq(Task.createdByUserId, userId));
+		}
 
 		if (status) {
 			conditions.push(eq(Task.status, status));
@@ -139,8 +163,15 @@ export default defineMyHandler(async ({ request, env }) => {
 	//   success: true,
 	//   data: { task: Task }
 	// }
-	// 注意：createdByUserId 自动设置为当前用户
+	// 权限：只有 admin 可以创建任务
 	if (request.method === 'POST') {
+		// 权限检查：员工不能创建任务
+		if (currentUser.role === 'employee') {
+			return createErrorResponse({
+				message: '员工不能创建任务',
+				options: { status: 403 }
+			});
+		}
 		let body: CreateTaskBody;
 		try {
 			body = await request.json() as CreateTaskBody;
