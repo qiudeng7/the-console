@@ -3,6 +3,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import { cloudflare } from "@cloudflare/vite-plugin"
+import tailwindcss from '@tailwindcss/vite'
 
 function createAlias(aliasList: Record<string, string>) {
 	const result: Record<string, string> = {}
@@ -15,6 +16,7 @@ function createAlias(aliasList: Record<string, string>) {
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [
+		tailwindcss(),
 		vue(),
 		vueDevTools(),
 		cloudflare()
