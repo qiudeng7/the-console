@@ -1,7 +1,8 @@
 /**
  * 用户管理 API
  *
- * GET /api/users - 获取用户列表
+ * GET    /api/users - 获取用户列表
+ * POST   /api/users - 创建用户
  *
  * 认证：需要 Bearer Token + admin 权限
  */
@@ -11,7 +12,17 @@ import { createSuccessResponse, createErrorResponse } from "#server/utils/respon
 import { getDrizzleClient } from "#drizzle-client";
 import { User } from "#server/database/schema";
 import { verifyToken, extractTokenFromHeader } from "#server/utils/jwt";
-import { eq, like } from "drizzle-orm";
+import { eq, like, and } from "drizzle-orm";
+
+interface CreateUserBody {
+	email: string;
+	password: string;
+	role?: 'admin' | 'employee';
+}
+
+interface UpdateUserBody {
+	role?: 'admin' | 'employee';
+}
 
 export default defineMyHandler(async ({ request, env }) => {
 	const authHeader = request.headers.get('Authorization');
@@ -123,6 +134,77 @@ export default defineMyHandler(async ({ request, env }) => {
 			total,
 			page,
 			pageSize
+		});
+	}
+
+	// ============================================================
+	// POST /api/users - 创建用户
+	// ============================================================
+	// 请求体：
+	// {
+	//   email: string,      // 必填
+	//   password: string,   // 必填
+	//   role?: string       // 可选，默认 'employee'
+	// }
+	//
+	// 响应：
+	// {
+	//   success: true,
+	//   data: { user: User }
+	// }
+	if (request.method === 'POST') {
+		let body: CreateUserBody;
+		try {
+			body = await request.json() as CreateUserBody;
+		} catch (e) {
+			return createErrorResponse({
+				message: '无效的 JSON 格式',
+				options: { status: 400 }
+			});
+		}
+
+		if (!body.email || !body.password) {
+			return createErrorResponse({
+				message: '邮箱和密码不能为空',
+				options: { status: 400 }
+			});
+		}
+
+		// 检查邮箱是否已存在
+		const existingUser = await drizzle
+			.select()
+			.from(User)
+			.where(eq(User.email, body.email))
+			.get();
+
+		if (existingUser) {
+			return createErrorResponse({
+				message: '邮箱已被注册',
+				options: { status: 409 }
+			});
+		}
+
+		const now = new Date().toLocaleString();
+
+		const newUser = await drizzle
+			.insert(User)
+			.values({
+				email: body.email,
+				password: body.password,
+				role: body.role || 'employee',
+				createdAt: now,
+				deletedAt: '',
+			})
+			.returning()
+			.get();
+
+		return createSuccessResponse({
+			user: {
+				id: newUser.id,
+				email: newUser.email,
+				role: newUser.role,
+				createdAt: newUser.createdAt,
+			}
 		});
 	}
 

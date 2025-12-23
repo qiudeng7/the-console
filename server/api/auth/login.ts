@@ -68,6 +68,7 @@ export default defineMyHandler(async ({ request, env }) => {
 		user: {
 			id: user.id,
 			email: user.email,
+			role: user.role,
 		},
 		token
 	});

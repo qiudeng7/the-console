@@ -28,12 +28,40 @@ export const useUserStore = defineStore('user', () => {
 		}
 	}
 
+	// 创建用户
+	async function createUser(data: { email: string; password: string; role?: 'admin' | 'employee' }) {
+		const result = await api.post<{ user: User }>('/api/users', data)
+		users.value.push(result.user)
+		total.value++
+		return result.user
+	}
+
+	// 更新用户角色
+	async function updateUserRole(id: number, role: 'admin' | 'employee') {
+		const result = await api.put<{ user: User }>(`/api/users/${id}`, { role })
+		const index = users.value.findIndex((u) => u.id === id)
+		if (index !== -1) {
+			users.value[index] = result.user
+		}
+		return result.user
+	}
+
+	// 删除用户
+	async function deleteUser(id: number) {
+		await api.delete(`/api/users/${id}`)
+		users.value = users.value.filter((u) => u.id !== id)
+		total.value--
+	}
+
 	return {
 		users,
 		isLoading,
 		total,
 		page,
 		pageSize,
-		fetchUsers
+		fetchUsers,
+		createUser,
+		updateUserRole,
+		deleteUser
 	}
 })
