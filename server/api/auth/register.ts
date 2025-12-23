@@ -59,10 +59,19 @@ export default defineMyHandler(async ({ request, env }) => {
 		.values({
 			email: body.email,
 			password: body.password, // 明文存储
-			role: 'employee', // 新用户默认为员工
+			role: 'employee', // 默认为员工
 		})
 		.returning()
 		.get();
+
+	// 第一个注册的用户设为管理员
+	if (newUser.id === 1) {
+		await drizzle
+			.update(User)
+			.set({ role: 'admin' })
+			.where(eq(User.id, newUser.id));
+		newUser.role = 'admin';
+	}
 
 	// 生成 JWT token
 	const token = generateToken(newUser.id, env.JWT_SECRET);
