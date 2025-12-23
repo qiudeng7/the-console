@@ -26,6 +26,7 @@ makemigrations脚本实际执行的命令是:
 drizzle-kit generate --config server/utils/drizzle/drizzle.config.ts
 ```
 
+> 注意这里创建的迁移文件似乎会有问题，下文会进行说明
 
 ## 创建数据库
 
@@ -49,10 +50,14 @@ pnpm wrangler d1 create [db-name] --update-config --binding [binding-name]
 
 启动vite开发环境时，cloudflare-vite会通过 workerd运行server部分的代码，从而模拟cloudflare的边缘服务器环境，我们在开发环境要用的D1数据库也由本地的workerd提供。
 
-我们可以通过wrangler创建本地数据库，命令如下（假设你已经通过drizzle-kit获得了迁移文件）
+我们可以通过wrangler创建本地数据库，但是我们不能创建空数据库，只能使用已有的sql文件去创建数据库或者使用wrangler应用迁移，具体的讨论可以看这里 https://github.com/drizzle-team/drizzle-orm/discussions/1388
+
+总之有很多问题，
+
+一个更好的办法是我们可以使用一个空的sql文件去创建本地d1，然后再用drizzle应用迁移，这样就可以得到drizzle的一致的体验。
 
 ```bash
-pnpm wrangler d1 execute [db-name] --file server/database/migrations/0000_equal_warstar.sql --local
+pnpm wrangler d1 execute the-console --file server/utils/drizzle/fake_migration.sql --local
 ```
 
 命令参考: https://developers.cloudflare.com/workers/wrangler/commands/#d1-execute
@@ -79,6 +84,14 @@ migrate脚本实际对应的命令是:
 ```bash
 drizzle-kit migrate --config server/utils/drizzle/drizzle.config.ts
 ```
+
+但是实际测试发现生成的迁移文件似乎逻辑上就有问题，比如我尝试给表A添加一个字段aa，生成的migrations的逻辑是：
+1. 创建一个包含aa字段的new_A表
+2. 把表A的数据转移到new_A
+3. 删除原表A
+4. 把new_A改名为A，
+
+逻辑是没问题的但是操作有问题，表A的数据转移到new_A的时候还是会从原A表中读取aa字段导致报错，需要手动修改migrations。
 
 ### 生产环境
 

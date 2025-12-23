@@ -1,0 +1,1 @@
+CREATE TABLE `fake_migration` ( `id` integer );
