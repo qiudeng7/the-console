@@ -90,12 +90,8 @@ export async function handleMyRoute(request: Request, env: Env, ctx: ExecutionCo
             throw new Error('路由处理器必须导出一个默认函数');
         }
 
-        // 创建带有 params 的增强 request 对象
-        const enhancedRequest = Object.create(request);
-        enhancedRequest.params = match.params;
-
         // 使用 defineMyHandler 包装的函数格式
-        return handler({ request: enhancedRequest, routerParams: match.params, env, ctx });
+        return handler({ request, routerParams: match.params, env, ctx });
     } catch (error) {
         console.error('路由导入错误:', error);
         return createErrorResponse('路由处理器加载失败')
