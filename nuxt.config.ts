@@ -15,7 +15,18 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true,
-    typeCheck: false // Disable type checking in dev for faster build
+    typeCheck: true, // Enable type checking
+    tsConfig: {
+      compilerOptions: {
+        strictNullChecks: true,
+        noUncheckedIndexedAccess: true,
+        noImplicitOverride: true,
+        noUnusedLocals: true,
+        noUnusedParameters: true,
+        noFallthroughCasesInSwitch: true,
+        forceConsistentCasingInFileNames: true
+      }
+    }
   },
 
   nitro: {
