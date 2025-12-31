@@ -61,13 +61,13 @@ const navigation = [
             :to="item.href"
             class="group flex items-center px-2 py-2 text-sm font-medium rounded-md mb-1"
             active-class="bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300"
-            inactive-class="text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+            inactive-class="text-gray-600 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
             @click="sidebarOpen = false"
           >
             <svg
               class="mr-3 h-5 w-5"
               :class="[
-                $route.path === item.href ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'
+                $route.path === item.href ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-300 dark:group-hover:text-gray-100'
               ]"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
