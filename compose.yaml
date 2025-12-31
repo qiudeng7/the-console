@@ -1,0 +1,79 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: the-console-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-the_console}
+      MYSQL_USER: ${MYSQL_USER:-the_console_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-the_console_password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - the-console-network
+
+  queue:
+    build:
+      context: ./queue
+      dockerfile: ../Dockerfile
+    container_name: the-console-queue
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-the_console_user}:${MYSQL_PASSWORD:-the_console_password}@mysql:3306/${MYSQL_DATABASE:-the_console}
+      NODE_ENV: production
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    networks:
+      - the-console-network
+    command: node server/index.mjs
+
+  app:
+    build:
+      context: ./app
+      dockerfile: ../Dockerfile
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-the_console_user}:${MYSQL_PASSWORD:-the_console_password}@mysql:3306/${MYSQL_DATABASE:-the_console}
+      QUEUE_SERVICE_URL: http://queue:4000
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      NODE_ENV: production
+    depends_on:
+      mysql:
+        condition: service_healthy
+      queue:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - the-console-network
+    deploy:
+      replicas: 2  # 启动 2 个 Nuxt 应用实例
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: the-console-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - the-console-network
+
+volumes:
+  mysql_data:
+
+networks:
+  the-console-network:
+    driver: bridge
