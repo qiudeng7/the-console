@@ -11,9 +11,13 @@ export const useTaskStore = defineStore('task', () => {
 
   // Actions
   async function fetchTasks(params: TaskListParams = {}) {
+    const authStore = useAuthStore()
     loading.value = true
     try {
       const response = await $fetch<{ success: boolean; data?: TaskListResponse; error?: string }>('/api/tasks', {
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        },
         params
       }).catch((e: any) => {
         return { success: false, error: e.message || '获取任务列表失败' } as const
@@ -35,9 +39,14 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   async function fetchTask(id: number) {
+    const authStore = useAuthStore()
     loading.value = true
     try {
-      const response = await $fetch<{ success: boolean; data?: { task: Task }; error?: string }>(`/api/tasks/${id}`).catch((e: any) => {
+      const response = await $fetch<{ success: boolean; data?: { task: Task }; error?: string }>(`/api/tasks/${id}`, {
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        }
+      }).catch((e: any) => {
         return { success: false, error: e.message || '获取任务详情失败' } as const
       })
 
