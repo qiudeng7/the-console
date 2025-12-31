@@ -22,6 +22,10 @@ const formData = reactive<LoginRequest>({
 const loading = ref(false)
 const error = ref('')
 
+function toggleColorMode() {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
+
 async function handleLogin() {
   error.value = ''
   loading.value = true
@@ -42,8 +46,8 @@ async function handleLogin() {
   <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 relative">
     <!-- Dark mode toggle -->
     <button
-      @click="colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'"
-      class="absolute top-4 right-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
+      @click="toggleColorMode"
+      class="absolute top-4 right-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-colors"
       title="切换颜色模式"
     >
       <svg v-if="colorMode.value === 'dark'" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
