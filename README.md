@@ -1,75 +1,127 @@
-# Nuxt Minimal Starter
+# The Console - 任务管理系统
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+基于 Nuxt 4 + Drizzle ORM + SQLite 构建的任务管理系统，支持管理员和员工角色权限管理。
 
-## Setup
+## 功能特性
 
-Make sure to install dependencies:
+- 用户认证（JWT）
+- 角色权限管理（Admin/Employee）
+- 任务 CRUD 操作
+- 任务状态管理
+- 任务搜索和过滤
+- 响应式 UI（Tailwind CSS）
+
+## 技术栈
+
+- **前端**: Vue 3, Nuxt 4, Tailwind CSS
+- **后端**: Nuxt Server API
+- **数据库**: SQLite + Drizzle ORM
+- **状态管理**: Pinia
+- **认证**: JWT (jsonwebtoken)
+
+## 安装
 
 ```bash
-# npm
-npm install
-
-# pnpm
+# 安装依赖
 pnpm install
 
-# yarn
-yarn install
+# 复制环境变量配置
+cp .env.example .env
 
-# bun
-bun install
+# 初始化数据库
+pnpm db:push
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+## 开发
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
+# 启动开发服务器
 pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+访问 http://localhost:3000
 
-Build the application for production:
+## 数据库管理
 
 ```bash
-# npm
-npm run build
+# 生成迁移文件
+pnpm db:generate
 
-# pnpm
+# 推送 schema 到数据库
+pnpm db:push
+
+# 打开数据库管理界面
+pnpm db:studio
+```
+
+## 用户角色
+
+### Admin（管理员）
+- 创建、编辑、删除任务
+- 分配任务给员工
+- 查看任务统计
+- 管理用户
+
+### Employee（员工）
+- 查看分配的任务
+- 查看任务详情
+- 更新任务状态
+
+## 默认设置
+
+- 第一个注册的用户自动成为管理员
+- JWT Token 有效期：7 天
+- 数据库文件：`./database.sqlite`
+
+## API 端点
+
+### 认证
+- `POST /api/auth/register` - 用户注册
+- `POST /api/auth/login` - 用户登录
+- `GET /api/auth/me` - 获取当前用户信息
+
+### 任务管理
+- `GET /api/tasks` - 获取任务列表
+- `POST /api/tasks` - 创建任务（仅管理员）
+- `GET /api/tasks/:id` - 获取任务详情
+- `PATCH /api/tasks/:id` - 更新任务
+- `DELETE /api/tasks/:id` - 删除任务
+- `GET /api/tasks/stats` - 获取任务统计（仅管理员）
+
+## 项目结构
+
+```
+├── app/                 # Nuxt app 目录
+├── components/          # Vue 组件
+├── layouts/            # 布局组件
+│   ├── admin.vue       # 管理员布局
+│   └── employee.vue    # 员工布局
+├── middleware/         # 中间件
+│   └── auth.ts        # 认证中间件
+├── pages/             # 页面组件
+│   ├── admin/        # 管理员页面
+│   ├── employee/     # 员工页面
+│   ├── login.vue     # 登录页
+│   └── register.vue  # 注册页
+├── server/           # 服务端代码
+│   ├── api/         # API 端点
+│   ├── database/    # 数据库相关
+│   └── utils/       # 工具函数
+├── stores/          # Pinia stores
+├── types/           # TypeScript 类型定义
+└── nuxt.config.ts   # Nuxt 配置
+```
+
+## 构建
+
+```bash
+# 生产构建
 pnpm build
 
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
+# 预览生产构建
 pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## License
+
+MIT
