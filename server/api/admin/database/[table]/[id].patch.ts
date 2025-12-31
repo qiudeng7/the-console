@@ -24,8 +24,8 @@ export default defineEventHandler(async (event) => {
     // 根据表名更新数据
     switch (tableName) {
       case 'users': {
-        // 不允许更新密码和敏感字段
-        const { password, deletedAt: _, ...userUpdateData } = body
+        // 只排除敏感字段，允许更新密码
+        const { deletedAt: _, ...userUpdateData } = body
         await db.update(User)
           .set(userUpdateData)
           .where(eq(User.id, id))

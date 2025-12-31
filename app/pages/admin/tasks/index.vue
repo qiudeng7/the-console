@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Task, TaskListParams } from '~~/types'
+import type { Task, TaskListParams, AuthUser } from '~~/types'
 
 definePageMeta({
   layout: 'admin',
@@ -7,8 +7,10 @@ definePageMeta({
 })
 
 import { useTaskStore } from '~~/app/stores/task'
+import { useAuthStore } from '~~/app/stores/auth'
 
 const taskStore = useTaskStore()
+const authStore = useAuthStore()
 
 const filters = reactive<TaskListParams>({
   page: 1,
@@ -30,6 +32,7 @@ const statusOptions = [
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const selectedTask = ref<Task | null>(null)
+const employees = ref<AuthUser[]>([])
 
 const newTask = reactive({
   title: '',
@@ -39,13 +42,33 @@ const newTask = reactive({
   assignedToUserId: null as number | null
 })
 
+// 获取员工列表
+async function fetchEmployees() {
+  try {
+    const response = await $fetch<{ success: boolean; data?: any[]; error?: string }>('/api/admin/database/users', {
+      headers: {
+        Authorization: `Bearer ${authStore.token}`
+      }
+    })
+
+    if (response.success && response.data) {
+      employees.value = response.data
+    }
+  } catch (e) {
+    console.error('Failed to fetch employees:', e)
+  }
+}
+
 async function loadTasks() {
   await taskStore.fetchTasks(filters)
 }
 
 async function handleCreateTask() {
   try {
-    await taskStore.createTask(newTask)
+    await taskStore.createTask({
+      ...newTask,
+      createdByUserId: authStore.user?.id || 0
+    })
     showCreateModal.value = false
     Object.assign(newTask, {
       title: '',
@@ -65,7 +88,12 @@ async function handleUpdateTask() {
 
   try {
     await taskStore.updateTask(selectedTask.value.id, {
-      status: selectedTask.value.status
+      title: selectedTask.value.title,
+      category: selectedTask.value.category,
+      tag: selectedTask.value.tag,
+      description: selectedTask.value.description,
+      status: selectedTask.value.status,
+      assignedToUserId: selectedTask.value.assignedToUserId
     })
     showEditModal.value = false
     selectedTask.value = null
@@ -96,6 +124,7 @@ function getStatusLabel(status: string) {
 }
 
 onMounted(() => {
+  fetchEmployees()
   loadTasks()
 })
 </script>
@@ -247,6 +276,15 @@ onMounted(() => {
                   <input v-model="newTask.tag" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <div>
+                  <label class="block text-sm font-medium text-gray-700">分配给</label>
+                  <select v-model="newTask.assignedToUserId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option :value="null">未分配</option>
+                    <option v-for="employee in employees" :key="employee.id" :value="employee.id">
+                      {{ employee.email }} ({{ employee.role === 'admin' ? '管理员' : '员工' }})
+                    </option>
+                  </select>
+                </div>
+                <div>
                   <label class="block text-sm font-medium text-gray-700">描述</label>
                   <textarea v-model="newTask.description" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
                 </div>
@@ -279,12 +317,33 @@ onMounted(() => {
                   <input v-model="selectedTask.title" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <div>
+                  <label class="block text-sm font-medium text-gray-700">分类</label>
+                  <input v-model="selectedTask.category" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">标签</label>
+                  <input v-model="selectedTask.tag" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">分配给</label>
+                  <select v-model="selectedTask.assignedToUserId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option :value="null">未分配</option>
+                    <option v-for="employee in employees" :key="employee.id" :value="employee.id">
+                      {{ employee.email }} ({{ employee.role === 'admin' ? '管理员' : '员工' }})
+                    </option>
+                  </select>
+                </div>
+                <div>
                   <label class="block text-sm font-medium text-gray-700">状态</label>
                   <select v-model="selectedTask.status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                     <option v-for="option in statusOptions.filter(o => o.value)" :key="option.value" :value="option.value">
                       {{ option.label }}
                     </option>
                   </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">描述</label>
+                  <textarea v-model="selectedTask.description" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
                 </div>
               </div>
             </div>
