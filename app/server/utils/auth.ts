@@ -45,7 +45,7 @@ export async function verifyAuth(token: string): Promise<AuthUser> {
     }
 
     // 检查用户状态（软删除）
-    if (user.deletedAt && user.deletedAt !== '') {
+    if (user.deletedAt !== null) {
       throw new Error('用户已被禁用')
     }
 

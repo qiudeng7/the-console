@@ -17,7 +17,7 @@ export function getDb() {
       connectionLimit: 10,
       enableKeepAlive: true
     })
-    db = drizzle(pool, { schema, mode: 'default' })
+    db = drizzle({ client: pool, schema })
   }
   return db!
 }

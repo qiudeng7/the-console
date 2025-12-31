@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
     )
 
   // 4. 检查是否更新成功（MySQL 使用 affectedRows）
-  if (result.affectedRows === 0) {
+  if ((result as any).affectedRows === 0) {
     throw createError({
       statusCode: 409,
       message: '用户数据已被其他人修改，请刷新后重试'
