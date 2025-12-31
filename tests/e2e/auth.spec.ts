@@ -10,13 +10,11 @@ describe('Authentication E2E Tests', () => {
         launchOptions: {
           headless: true
         }
-      }
-    })
-
-    await crawler.run({
-      requestQueue: [url],
+      },
       requestHandler: handler
     })
+
+    await crawler.run([url])
   }
 
   describe('User Registration', () => {
