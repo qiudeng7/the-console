@@ -1,5 +1,4 @@
 import { eq } from 'drizzle-orm'
-import bcrypt from 'bcryptjs'
 import { getDb } from '~~/server/database/db'
 import { User } from '~~/server/database/schema'
 import { generateToken } from '~~/server/utils/jwt'
@@ -41,9 +40,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 验证密码
-    const isPasswordValid = await bcrypt.compare(body.password, user.password)
-    if (!isPasswordValid) {
+    // 验证密码（明文比较）
+    if (body.password !== user.password) {
       return {
         success: false,
         error: '邮箱或密码错误'

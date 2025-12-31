@@ -1,5 +1,4 @@
 import { eq } from 'drizzle-orm'
-import bcrypt from 'bcryptjs'
 import { getDb } from '~~/server/database/db'
 import { User } from '~~/server/database/schema'
 import { generateToken } from '~~/server/utils/jwt'
@@ -41,15 +40,12 @@ export default defineEventHandler(async (event) => {
 
     const isFirstUser = existingUsers.length === 0
 
-    // 加密密码
-    const hashedPassword = await bcrypt.hash(body.password, 10)
-
-    // 插入新用户
+    // 插入新用户（明文密码）
     const newUser = await db
       .insert(User)
       .values({
         email: body.email,
-        password: hashedPassword,
+        password: body.password,
         role: isFirstUser ? 'admin' : 'employee' // 第一个用户为管理员
       })
       .returning()
