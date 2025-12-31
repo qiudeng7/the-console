@@ -1,29 +1,23 @@
 import { getDb } from '~~/server/database/db'
 import { User, Task, K8sCluster, K8sNode } from '~~/server/database/schema'
 import { eq } from 'drizzle-orm'
+import { getAdminUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getHeader(event, 'authorization')
-  const token = authHeader?.replace('Bearer ', '')
-
-  if (!token) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权'
-    })
-  }
-
-  const tableName = getRouterParam(event, 'table')
-  const id = parseInt(getRouterParam(event, 'id') || '')
-
-  if (!tableName || !id) {
-    throw createError({
-      statusCode: 400,
-      message: '参数错误'
-    })
-  }
-
   try {
+    // 验证管理员权限
+    await getAdminUser(event)
+
+    const tableName = getRouterParam(event, 'table')
+    const id = parseInt(getRouterParam(event, 'id') || '')
+
+    if (!tableName || !id) {
+      return {
+        success: false,
+        error: '参数错误'
+      }
+    }
+
     const db = getDb()
 
     // 根据表名删除数据
@@ -56,17 +50,24 @@ export default defineEventHandler(async (event) => {
         break
 
       default:
-        throw createError({
-          statusCode: 400,
-          message: '无效的表名'
-        })
+        return {
+          success: false,
+          error: '无效的表名'
+        }
     }
 
-    return { success: true }
+    return {
+      success: true
+    }
   } catch (error: any) {
-    throw createError({
-      statusCode: 500,
-      message: error.message || '删除失败'
-    })
+    const tableName = getRouterParam(event, 'table')
+    const id = getRouterParam(event, 'id')
+    console.error(`[DELETE /api/admin/database/${tableName}/${id}] Error:`, error)
+    console.error('Error stack:', error.stack)
+
+    return {
+      success: false,
+      error: error.message || '删除失败'
+    }
   }
 })

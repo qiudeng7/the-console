@@ -5,7 +5,7 @@ definePageMeta({
   layout: 'employee'
 })
 
-import { useTaskStore } from '~~/stores/task'
+import { useTaskStore } from '~~/app/stores/task'
 
 const taskStore = useTaskStore()
 

@@ -1,29 +1,22 @@
 import { getDb } from '~~/server/database/db'
 import { User, Task, K8sCluster, K8sNode } from '~~/server/database/schema'
 import { eq } from 'drizzle-orm'
+import { getAdminUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
-  const authHeader = getHeader(event, 'authorization')
-  const token = authHeader?.replace('Bearer ', '')
-
-  if (!token) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权'
-    })
-  }
-
-  const tableName = getRouterParam(event, 'table')
-
-  if (!tableName) {
-    throw createError({
-      statusCode: 400,
-      message: '表名不能为空'
-    })
-  }
-
   try {
+    // 验证管理员权限（会验证token有效性、用户状态和角色）
+    await getAdminUser(event)
+
+    const tableName = getRouterParam(event, 'table')
+
+    if (!tableName) {
+      return {
+        success: false,
+        error: '表名不能为空'
+      }
+    }
+
     const db = getDb()
     let data: any[] = []
 
@@ -53,17 +46,21 @@ export default defineEventHandler(async (event) => {
         break
 
       default:
-        throw createError({
-          statusCode: 400,
-          message: '无效的表名'
-        })
+        return {
+          success: false,
+          error: '无效的表名'
+        }
     }
 
-    return data
+    return {
+      success: true,
+      data
+    }
   } catch (error: any) {
-    throw createError({
-      statusCode: 500,
-      message: error.message || '获取数据失败'
-    })
+    console.error(`[GET /api/admin/database/${getRouterParam(event, 'table')}] Error:`, error)
+    return {
+      success: false,
+      error: error.message || '获取数据失败'
+    }
   }
 })

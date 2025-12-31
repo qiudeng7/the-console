@@ -1,56 +1,13 @@
 import { eq } from 'drizzle-orm'
 import { getDb } from '~~/server/database/db'
-import { Task, User } from '~~/server/database/schema'
-import { extractTokenFromHeader, verifyToken } from '~~/server/utils/jwt'
+import { Task } from '~~/server/database/schema'
+import { getAdminUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getHeader(event, 'authorization')
-  const token = extractTokenFromHeader(authHeader)
-
-  if (!token) {
-    setResponseStatus(event, 401)
-    return {
-      success: false,
-      error: '未认证'
-    }
-  }
-
-  const config = useRuntimeConfig()
-  const userId = verifyToken(token, config.jwtSecret)
-
-  if (!userId) {
-    setResponseStatus(event, 401)
-    return {
-      success: false,
-      error: 'Token 无效或已过期'
-    }
-  }
+  // 验证管理员权限
+  await getAdminUser(event)
 
   const db = getDb()
-
-  // 获取当前用户信息并检查权限
-  const currentUser = await db
-    .select()
-    .from(User)
-    .where(eq(User.id, userId))
-    .get()
-
-  if (!currentUser) {
-    setResponseStatus(event, 404)
-    return {
-      success: false,
-      error: '用户不存在'
-    }
-  }
-
-  // 权限检查：只有 admin 可以访问
-  if (currentUser.role !== 'admin') {
-    setResponseStatus(event, 403)
-    return {
-      success: false,
-      error: '需要管理员权限'
-    }
-  }
 
   // 获取所有未删除的任务
   const allTasks = await db

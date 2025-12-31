@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', 'pinia-plugin-persistedstate'],
 
   runtimeConfig: {
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
@@ -15,7 +15,7 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true,
-    typeCheck: true, // Enable type checking
+    typeCheck: true,
     tsConfig: {
       compilerOptions: {
         strictNullChecks: true,
@@ -24,7 +24,8 @@ export default defineNuxtConfig({
         noUnusedLocals: true,
         noUnusedParameters: true,
         noFallthroughCasesInSwitch: true,
-        forceConsistentCasingInFileNames: true
+        forceConsistentCasingInFileNames: true,
+        skipLibCheck: true
       }
     }
   },
@@ -36,6 +37,6 @@ export default defineNuxtConfig({
   },
 
   imports: {
-    dirs: ['stores']
+    dirs: ['app/stores']
   }
 })

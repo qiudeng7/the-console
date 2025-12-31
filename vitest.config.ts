@@ -7,7 +7,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', '.nuxt', '.output'],
+    exclude: ['node_modules', 'dist', '.nuxt', '.output', 'tests/e2e'],
     setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',

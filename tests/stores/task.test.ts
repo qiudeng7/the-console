@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useTaskStore } from '~/stores/task'
-import { useAuthStore } from '~/stores/auth'
+import { useTaskStore } from '~/app/stores/task'
+import { useAuthStore } from '~/app/stores/auth'
 import type { Task, TaskStats } from '~/types'
 
 // Mock $fetch
@@ -40,6 +40,7 @@ describe('Task Store', () => {
       ]
 
       const mockResponse = {
+        success: true,
         data: {
           tasks: mockTasks,
           total: 1
@@ -67,6 +68,7 @@ describe('Task Store', () => {
 
     it('should pass query parameters to API', async () => {
       const mockResponse = {
+        success: true,
         data: {
           tasks: [],
           total: 0
@@ -85,6 +87,7 @@ describe('Task Store', () => {
 
     it('should set loading to true during fetch', async () => {
       const mockResponse = {
+        success: true,
         data: {
           tasks: [],
           total: 0
@@ -117,6 +120,7 @@ describe('Task Store', () => {
       }
 
       const mockResponse = {
+        success: true,
         data: {
           task: mockTask
         }
@@ -159,6 +163,7 @@ describe('Task Store', () => {
       } as Task
 
       const mockResponse = {
+        success: true,
         data: {
           task: mockCreatedTask
         }
@@ -217,9 +222,7 @@ describe('Task Store', () => {
         updatedAt: '2025/12/31 00:00:00'
       }
 
-      store.tasks = [existingTask]
-
-      const mockResponse = { data: { task: newTask } }
+      const mockResponse = { success: true, data: { task: newTask } }
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
 
       const authStore = useAuthStore()
@@ -253,7 +256,7 @@ describe('Task Store', () => {
         status: 'in_progress'
       }
 
-      const mockResponse = { data: { task: updatedTask } }
+      const mockResponse = { success: true, data: { task: updatedTask } }
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
 
       const authStore = useAuthStore()
@@ -308,7 +311,7 @@ describe('Task Store', () => {
         title: 'Updated Task 2'
       }
 
-      const mockResponse = { data: { task: updatedTask2 } }
+      const mockResponse = { success: true, data: { task: updatedTask2 } }
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
 
       const authStore = useAuthStore()
@@ -335,7 +338,7 @@ describe('Task Store', () => {
         updatedAt: '2025/12/31 00:00:00'
       }
 
-      const mockResponse = { data: { task: originalTask } }
+      const mockResponse = { success: true, data: { task: originalTask } }
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
 
       const authStore = useAuthStore()
@@ -374,7 +377,7 @@ describe('Task Store', () => {
         updatedAt: '2025/12/31 00:00:00'
       }
 
-      const mockResponse = {}
+      const mockResponse = { success: true }
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
 
       const authStore = useAuthStore()
@@ -416,7 +419,7 @@ describe('Task Store', () => {
         updatedAt: '2025/12/31 00:00:00'
       }
 
-      const mockResponse = {}
+      const mockResponse = { success: true }
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
 
       const authStore = useAuthStore()
@@ -455,7 +458,7 @@ describe('Task Store', () => {
         updatedAt: '2025/12/31 00:00:00'
       }
 
-      const mockResponse = {}
+      const mockResponse = { success: true }
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
 
       const authStore = useAuthStore()
@@ -475,21 +478,25 @@ describe('Task Store', () => {
   describe('Fetch Stats', () => {
     it('should fetch stats successfully', async () => {
       const mockStats: TaskStats = {
-        total: 10,
-        todo: 3,
-        inProgress: 4,
-        completed: 3,
+        byStatus: {
+          todo: 3,
+          in_progress: 4,
+          in_review: 0,
+          done: 3,
+          cancelled: 0
+        },
         byCategory: {
           Testing: 5,
           Development: 3,
           Research: 2
-        }
+        },
+        byAssignee: {},
+        total: 10
       }
 
       const mockResponse = {
-        data: {
-          stats: mockStats
-        }
+        success: true,
+        data: mockStats
       }
 
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
@@ -516,14 +523,19 @@ describe('Task Store', () => {
 
     it('should include authorization header', async () => {
       const mockStats: TaskStats = {
-        total: 0,
-        todo: 0,
-        inProgress: 0,
-        completed: 0,
-        byCategory: {}
+        byStatus: {
+          todo: 0,
+          in_progress: 0,
+          in_review: 0,
+          done: 0,
+          cancelled: 0
+        },
+        byCategory: {},
+        byAssignee: {},
+        total: 0
       }
 
-      const mockResponse = { data: { stats: mockStats } }
+      const mockResponse = { success: true, data: mockStats }
       vi.mocked($fetch).mockResolvedValueOnce(mockResponse as any)
 
       const authStore = useAuthStore()

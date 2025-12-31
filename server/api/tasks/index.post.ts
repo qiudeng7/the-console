@@ -1,30 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { getDb } from '~~/server/database/db'
 import { Task, User } from '~~/server/database/schema'
-import { extractTokenFromHeader, verifyToken } from '~~/server/utils/jwt'
+import { getAuthUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getHeader(event, 'authorization')
-  const token = extractTokenFromHeader(authHeader)
-
-  if (!token) {
-    setResponseStatus(event, 401)
-    return {
-      success: false,
-      error: '未认证'
-    }
-  }
-
-  const config = useRuntimeConfig()
-  const userId = verifyToken(token, config.jwtSecret)
-
-  if (!userId) {
-    setResponseStatus(event, 401)
-    return {
-      success: false,
-      error: 'Token 无效或已过期'
-    }
-  }
+  // 验证用户身份
+  const authUser = await getAuthUser(event)
 
   const db = getDb()
 
@@ -32,34 +13,31 @@ export default defineEventHandler(async (event) => {
   const currentUser = await db
     .select()
     .from(User)
-    .where(eq(User.id, userId))
+    .where(eq(User.id, authUser.id))
     .get()
 
   if (!currentUser) {
-    setResponseStatus(event, 404)
-    return {
-      success: false,
-      error: '用户不存在'
-    }
+    throw createError({
+      statusCode: 404,
+      message: '用户不存在'
+    })
   }
 
   // 权限检查：员工不能创建任务
   if (currentUser.role === 'employee') {
-    setResponseStatus(event, 403)
-    return {
-      success: false,
-      error: '员工不能创建任务'
-    }
+    throw createError({
+      statusCode: 403,
+      message: '员工不能创建任务'
+    })
   }
 
   const body = await readBody(event)
 
   if (!body?.title) {
-    setResponseStatus(event, 400)
-    return {
-      success: false,
-      error: '任务标题不能为空'
-    }
+    throw createError({
+      statusCode: 400,
+      message: '任务标题不能为空'
+    })
   }
 
   const now = new Date().toLocaleString()
@@ -72,7 +50,7 @@ export default defineEventHandler(async (event) => {
       tag: body.tag || null,
       description: body.description || null,
       status: body.status || 'todo',
-      createdByUserId: userId,
+      createdByUserId: authUser.id,
       assignedToUserId: body.assignedToUserId || null,
       createdAt: now,
       updatedAt: now,

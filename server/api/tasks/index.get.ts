@@ -1,30 +1,11 @@
 import { eq, and, like, or } from 'drizzle-orm'
 import { getDb } from '~~/server/database/db'
 import { Task, User } from '~~/server/database/schema'
-import { extractTokenFromHeader, verifyToken } from '~~/server/utils/jwt'
+import { getAuthUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getHeader(event, 'authorization')
-  const token = extractTokenFromHeader(authHeader)
-
-  if (!token) {
-    setResponseStatus(event, 401)
-    return {
-      success: false,
-      error: '未认证'
-    }
-  }
-
-  const config = useRuntimeConfig()
-  const userId = verifyToken(token, config.jwtSecret)
-
-  if (!userId) {
-    setResponseStatus(event, 401)
-    return {
-      success: false,
-      error: 'Token 无效或已过期'
-    }
-  }
+  // 验证用户身份（会验证token和用户状态）
+  const authUser = await getAuthUser(event)
 
   const db = getDb()
 
@@ -32,15 +13,22 @@ export default defineEventHandler(async (event) => {
   const currentUser = await db
     .select()
     .from(User)
-    .where(eq(User.id, userId))
+    .where(eq(User.id, authUser.id))
     .get()
 
   if (!currentUser) {
-    setResponseStatus(event, 404)
-    return {
-      success: false,
-      error: '用户不存在'
-    }
+    throw createError({
+      statusCode: 404,
+      message: '用户不存在'
+    })
+  }
+
+  // 检查用户状态（软删除）
+  if (currentUser.deletedAt && currentUser.deletedAt !== '') {
+    throw createError({
+      statusCode: 403,
+      message: '用户已被禁用'
+    })
   }
 
   const query = getQuery(event)
@@ -57,10 +45,10 @@ export default defineEventHandler(async (event) => {
   // 根据角色设置不同的查询条件
   if (currentUser.role === 'employee') {
     // 员工只能看到分配给自己的任务
-    conditions.push(eq(Task.assignedToUserId, userId))
+    conditions.push(eq(Task.assignedToUserId, authUser.id))
   } else {
     // admin 看到自己创建的任务
-    conditions.push(eq(Task.createdByUserId, userId))
+    conditions.push(eq(Task.createdByUserId, authUser.id))
   }
 
   if (status) {

@@ -6,7 +6,7 @@ definePageMeta({
   requiresAuth: false
 })
 
-import { useAuthStore } from '~~/stores/auth'
+import { useAuthStore } from '~~/app/stores/auth'
 
 const authStore = useAuthStore()
 const router = useRouter()

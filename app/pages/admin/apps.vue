@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAuthStore } from '~~/stores/auth'
+import { useAuthStore } from '~~/app/stores/auth'
 
 definePageMeta({
   layout: 'admin',
@@ -37,19 +37,19 @@ async function fetchTableData(tableName: string) {
   error.value = ''
 
   try {
-    const response = await $fetch<any[]>(`/api/admin/database/${tableName}`, {
+    const response = await $fetch<{ success: boolean; data?: any[]; error?: string }>(`/api/admin/database/${tableName}`, {
       headers: {
         Authorization: `Bearer ${authStore.token}`
       }
     }).catch((e: any) => {
-      return { error: e.message || '获取数据失败' }
+      return { success: false, error: e.message || '获取数据失败' } as const
     })
 
-    if ('error' in response) {
-      throw new Error(response.error)
+    if (!response.success || response.error) {
+      throw new Error(response.error || '获取数据失败')
     }
 
-    tableData.value = response
+    tableData.value = response.data || []
   } catch (e: any) {
     error.value = e.message || '获取数据失败'
     tableData.value = []
@@ -62,14 +62,6 @@ async function fetchTableData(tableName: string) {
 async function selectTable(tableName: string) {
   selectedTable.value = tableName
   await fetchTableData(tableName)
-}
-
-// 获取表头
-function getColumns() {
-  if (tableData.value.length === 0) return []
-  const cols = Object.keys(tableData.value[0])
-  // 排除密码字段
-  return cols.filter(c => c !== 'password')
 }
 
 // 格式化值
@@ -103,18 +95,18 @@ function openDeleteModal(row: any) {
 async function createRecord() {
   loading.value = true
   try {
-    const response = await $fetch(`/api/admin/database/${selectedTable.value}`, {
+    const response = await $fetch<{ success: boolean; error?: string }>(`/api/admin/database/${selectedTable.value}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.token}`
       },
       body: formData.value
     }).catch((e: any) => {
-      return { error: e.message || '创建失败' }
+      return { success: false, error: e.message || '创建失败' }
     })
 
-    if ('error' in response) {
-      throw new Error(response.error)
+    if (!response.success || response.error) {
+      throw new Error(response.error || '创建失败')
     }
 
     showCreateModal.value = false
@@ -130,18 +122,18 @@ async function createRecord() {
 async function updateRecord() {
   loading.value = true
   try {
-    const response = await $fetch(`/api/admin/database/${selectedTable.value}/${editingRow.value.id}`, {
+    const response = await $fetch<{ success: boolean; error?: string }>(`/api/admin/database/${selectedTable.value}/${editingRow.value.id}`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${authStore.token}`
       },
       body: formData.value
     }).catch((e: any) => {
-      return { error: e.message || '更新失败' }
+      return { success: false, error: e.message || '更新失败' }
     })
 
-    if ('error' in response) {
-      throw new Error(response.error)
+    if (!response.success || response.error) {
+      throw new Error(response.error || '更新失败')
     }
 
     showEditModal.value = false
@@ -158,17 +150,17 @@ async function updateRecord() {
 async function deleteRecord() {
   loading.value = true
   try {
-    const response = await $fetch(`/api/admin/database/${selectedTable.value}/${deletingRow.value.id}`, {
+    const response = await $fetch<{ success: boolean; error?: string }>(`/api/admin/database/${selectedTable.value}/${deletingRow.value.id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${authStore.token}`
       }
     }).catch((e: any) => {
-      return { error: e.message || '删除失败' }
+      return { success: false, error: e.message || '删除失败' }
     })
 
-    if ('error' in response) {
-      throw new Error(response.error)
+    if (!response.success || response.error) {
+      throw new Error(response.error || '删除失败')
     }
 
     showDeleteModal.value = false
@@ -181,30 +173,33 @@ async function deleteRecord() {
   }
 }
 
-// 判断字段是否可编辑
-function isEditable(column: string): boolean {
-  const readonlyFields = ['id', 'createdAt', 'deletedAt', 'updatedAt']
-  return !readonlyFields.includes(column)
-}
-
-// 判断是否是密码字段
-function isPasswordField(column: string): boolean {
-  return column === 'password'
-}
-
-// 获取字段类型
-function getFieldType(column: string): string {
+// 获取所有可编辑的字段及其类型
+const editableFields = computed(() => {
+  if (tableData.value.length === 0 || !tableData.value[0]) return []
   const row = tableData.value[0]
-  if (!row) return 'text'
+  const readonlyFields = ['id', 'createdAt', 'deletedAt', 'updatedAt']
 
-  const value = row[column]
-  if (typeof value === 'number') return 'number'
-  if (column.includes('password')) return 'password'
-  if (column.includes('email')) return 'email'
-  if (column.includes('role')) return 'role'
-  if (column.includes('status')) return 'status'
-  return 'text'
-}
+  return Object.keys(row)
+    .filter(col => col !== 'password' && !readonlyFields.includes(col))
+    .map(col => {
+      const value = row[col]
+      let fieldType = 'text'
+
+      if (typeof value === 'number') fieldType = 'number'
+      else if (col.includes('password')) fieldType = 'password'
+      else if (col.includes('email')) fieldType = 'email'
+      else if (col.includes('role')) fieldType = 'role'
+      else if (col.includes('status')) fieldType = 'status'
+
+      return { name: col, type: fieldType }
+    })
+})
+
+// 获取表头（用于显示）
+const columns = computed(() => {
+  if (tableData.value.length === 0 || !tableData.value[0]) return []
+  return Object.keys(tableData.value[0]).filter(c => c !== 'password')
+})
 
 // 初始加载
 onMounted(() => {
@@ -325,7 +320,7 @@ onMounted(() => {
               <thead class="bg-gray-50">
                 <tr>
                   <th
-                    v-for="column in getColumns()"
+                    v-for="column in columns"
                     :key="column"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
@@ -339,7 +334,7 @@ onMounted(() => {
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="(row, index) in tableData" :key="index">
                   <td
-                    v-for="column in getColumns()"
+                    v-for="column in columns"
                     :key="column"
                     class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                   >
@@ -378,15 +373,15 @@ onMounted(() => {
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">新增记录</h3>
             <div class="space-y-4">
-              <div v-for="column in getColumns()" :key="column" class="flex flex-col" v-if="isEditable(column)">
-                <label class="text-sm font-medium text-gray-700">{{ column }}</label>
-                <select v-if="getFieldType(column) === 'role'" v-model="formData[column]" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              <div v-for="field in editableFields" :key="field.name" class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700">{{ field.name }}</label>
+                <select v-if="field.type === 'role'" v-model="formData[field.name]" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                   <option value="">请选择</option>
                   <option value="admin">管理员</option>
                   <option value="employee">员工</option>
                 </select>
-                <input v-else-if="getFieldType(column) === 'status'" v-model="formData[column]" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="todo, in_progress, in_review, done, cancelled">
-                <input v-else v-model="formData[column]" :type="getFieldType(column)" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <input v-else-if="field.type === 'status'" v-model="formData[field.name]" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="todo, in_progress, in_review, done, cancelled">
+                <input v-else v-model="formData[field.name]" :type="field.type" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
               </div>
             </div>
           </div>
@@ -411,15 +406,15 @@ onMounted(() => {
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">编辑记录</h3>
             <div class="space-y-4">
-              <div v-for="column in getColumns()" :key="column" class="flex flex-col" v-if="isEditable(column)">
-                <label class="text-sm font-medium text-gray-700">{{ column }}</label>
-                <select v-if="getFieldType(column) === 'role'" v-model="formData[column]" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              <div v-for="field in editableFields" :key="field.name" class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700">{{ field.name }}</label>
+                <select v-if="field.type === 'role'" v-model="formData[field.name]" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                   <option value="">请选择</option>
                   <option value="admin">管理员</option>
                   <option value="employee">员工</option>
                 </select>
-                <input v-else-if="getFieldType(column) === 'status'" v-model="formData[column]" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="todo, in_progress, in_review, done, cancelled">
-                <input v-else v-model="formData[column]" :type="getFieldType(column)" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <input v-else-if="field.type === 'status'" v-model="formData[field.name]" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="todo, in_progress, in_review, done, cancelled">
+                <input v-else v-model="formData[field.name]" :type="field.type" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
               </div>
             </div>
           </div>

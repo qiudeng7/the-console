@@ -1,27 +1,27 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-
-// Mock useRuntimeConfig
-vi.mock('#app', () => ({
-  useRuntimeConfig: () => ({
-    databasePath: ':memory:'
-  })
-}))
 
 describe('Database Utility', () => {
   let db: ReturnType<typeof drizzle> | null = null
 
+  beforeEach(async () => {
+    // Reset database instance before each test
+    const { resetDb } = await import('~/server/database/db')
+    resetDb()
+  })
+
   afterEach(() => {
-    // Clear module cache to reset singleton between tests
-    vi.resetModules()
+    // Clean up
+    const sqlite = (db as any)?._.session?.sqlite
+    sqlite?.close()
     db = null
   })
 
   describe('Singleton Pattern', () => {
     it('should create database instance on first call', async () => {
       const { getDb } = await import('~/server/database/db')
-      const instance = getDb()
+      const instance = getDb(':memory:')
 
       expect(instance).toBeDefined()
       expect(db).toBeNull() // Local variable still null
@@ -29,15 +29,15 @@ describe('Database Utility', () => {
 
     it('should return same instance on subsequent calls', async () => {
       const { getDb } = await import('~/server/database/db')
-      const instance1 = getDb()
-      const instance2 = getDb()
+      const instance1 = getDb(':memory:')
+      const instance2 = getDb(':memory:')
 
       expect(instance1).toBe(instance2)
     })
 
     it('should initialize drizzle with schema', async () => {
       const { getDb } = await import('~/server/database/db')
-      const instance = getDb()
+      const instance = getDb(':memory:')
 
       expect(instance).toBeDefined()
       // Drizzle instance should have query methods
@@ -49,27 +49,18 @@ describe('Database Utility', () => {
   })
 
   describe('Database Connection', () => {
-    it('should use databasePath from runtime config', async () => {
-      // Mock with specific path
-      vi.doMock('#app', () => ({
-        useRuntimeConfig: () => ({
-          databasePath: ':memory:'
-        })
-      }))
-
+    it('should use provided databasePath parameter', async () => {
       const { getDb } = await import('~/server/database/db')
-      const instance = getDb()
+      const instance = getDb(':memory:')
 
       expect(instance).toBeDefined()
     })
 
     it('should create in-memory database when path is :memory:', async () => {
       const { getDb } = await import('~/server/database/db')
-      const instance = getDb()
 
-      expect(instance).toBeDefined()
-      // In-memory database should work without file
-      expect(instance).not.toThrow()
+      // Should not throw when creating in-memory database
+      expect(() => getDb(':memory:')).not.toThrow()
     })
   })
 
@@ -77,23 +68,24 @@ describe('Database Utility', () => {
     it('should have schema exported and attached to db instance', async () => {
       const { getDb } = await import('~/server/database/db')
       const schema = await import('~/server/database/schema')
-      const instance = getDb()
+      const instance = getDb(':memory:')
 
       // Verify schema tables are defined
-      expect(schema.users).toBeDefined()
-      expect(schema.tasks).toBeDefined()
-      expect(schema.k8sClusters).toBeDefined()
-      expect(schema.k8sNodes).toBeDefined()
+      expect(schema.User).toBeDefined()
+      expect(schema.Task).toBeDefined()
+      expect(schema.K8sCluster).toBeDefined()
+      expect(schema.K8sNode).toBeDefined()
     })
   })
 
   describe('Database Operations', () => {
     it('should support basic query operations', async () => {
       const { getDb } = await import('~/server/database/db')
-      const db = getDb()
+      const { User } = await import('~/server/database/schema')
+      db = getDb(':memory:')
 
       // Select should return a query builder
-      const selectQuery = db.select().from(await import('~/server/database/schema').then(m => m.users))
+      const selectQuery = db.select().from(User)
       expect(selectQuery).toBeDefined()
     })
   })

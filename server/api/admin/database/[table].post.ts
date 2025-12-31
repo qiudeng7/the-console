@@ -1,28 +1,22 @@
 import { getDb } from '~~/server/database/db'
 import { User, Task, K8sCluster, K8sNode } from '~~/server/database/schema'
+import { getAdminUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getHeader(event, 'authorization')
-  const token = authHeader?.replace('Bearer ', '')
-
-  if (!token) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权'
-    })
-  }
-
-  const tableName = getRouterParam(event, 'table')
-  const body = await readBody(event)
-
-  if (!tableName) {
-    throw createError({
-      statusCode: 400,
-      message: '表名不能为空'
-    })
-  }
-
   try {
+    // 验证管理员权限
+    await getAdminUser(event)
+
+    const tableName = getRouterParam(event, 'table')
+    const body = await readBody(event)
+
+    if (!tableName) {
+      return {
+        success: false,
+        error: '表名不能为空'
+      }
+    }
+
     const db = getDb()
     let result: any
 
@@ -31,10 +25,10 @@ export default defineEventHandler(async (event) => {
       case 'users':
         // 用户需要密码哈希
         if (!body.password) {
-          throw createError({
-            statusCode: 400,
-            message: '密码不能为空'
-          })
+          return {
+            success: false,
+            error: '密码不能为空'
+          }
         }
         const bcrypt = await import('bcryptjs')
         const hashedPassword = await bcrypt.hash(body.password, 10)
@@ -65,17 +59,25 @@ export default defineEventHandler(async (event) => {
         break
 
       default:
-        throw createError({
-          statusCode: 400,
-          message: '无效的表名'
-        })
+        return {
+          success: false,
+          error: '无效的表名'
+        }
     }
 
-    return result[0]
+    return {
+      success: true,
+      data: result[0]
+    }
   } catch (error: any) {
-    throw createError({
-      statusCode: 500,
-      message: error.message || '创建失败'
-    })
+    const tableName = getRouterParam(event, 'table')
+    const body = await readBody(event).catch(() => ({}))
+    console.error(`[POST /api/admin/database/${tableName}] Error:`, error)
+    console.error('Request body:', body)
+
+    return {
+      success: false,
+      error: error.message || '创建失败'
+    }
   }
 })

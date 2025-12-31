@@ -1,10 +1,11 @@
 import { vi } from 'vitest'
 import { defineStore as piniaDefineStore } from 'pinia'
+import { ref as vueRef, computed as vueComputed } from 'vue'
 
-// Mock Nuxt auto-imports
+// Mock Nuxt auto-imports with real Vue functions
 vi.stubGlobal('defineStore', piniaDefineStore)
-vi.stubGlobal('ref', (value: any) => ({ value }))
-vi.stubGlobal('computed', (fn: any) => ({ deps: [], fn }))
+vi.stubGlobal('ref', vueRef)
+vi.stubGlobal('computed', vueComputed)
 vi.stubGlobal('$fetch', vi.fn())
 
 // Mock useRuntimeConfig
