@@ -34,7 +34,7 @@ export function verifyToken(token: string, secret: string): number | null {
  * @param authHeader - Authorization 请求头的值
  * @returns token 字符串，格式无效返回 null
  */
-export function extractTokenFromHeader(authHeader: string | null): string | null {
+export function extractTokenFromHeader(authHeader: string | null | undefined): string | null {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null
   }

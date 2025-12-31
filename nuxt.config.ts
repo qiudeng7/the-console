@@ -33,5 +33,9 @@ export default defineNuxtConfig({
     experimental: {
       openAPI: true
     }
+  },
+
+  imports: {
+    dirs: ['stores']
   }
 })

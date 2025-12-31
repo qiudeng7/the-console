@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import type { RegisterRequest } from '~/types'
+import type { RegisterRequest } from '~~/types'
 
 definePageMeta({
   layout: false,
   requiresAuth: false
 })
 
+import { useAuthStore } from '~~/stores/auth'
+
 const authStore = useAuthStore()
 const router = useRouter()
 
-const formData = reactive<RegisterRequest>({
+interface RegisterFormData extends RegisterRequest {
+  confirmPassword: string
+}
+
+const formData = reactive<RegisterFormData>({
   email: '',
   password: '',
   confirmPassword: ''

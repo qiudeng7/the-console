@@ -1,4 +1,6 @@
-export default defineNuxtRouteMiddleware((to, from) => {
+import { useAuthStore } from '~~/stores/auth'
+
+export default defineNuxtRouteMiddleware((to) => {
   const authStore = useAuthStore()
 
   // Check if the route requires authentication
@@ -7,7 +9,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   if (requiresAuth && !authStore.isAuthenticated) {
     // Redirect to login page
-    return navigateTo('/login', { query: { redirect: to.fullPath } })
+    return navigateTo({ path: '/login', query: { redirect: to.fullPath } })
   }
 
   if (requiresAdmin && !authStore.isAdmin) {

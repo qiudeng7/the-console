@@ -1,4 +1,4 @@
-import type { AuthUser, LoginRequest, RegisterRequest, AuthResponse } from '~/types'
+import type { AuthUser, LoginRequest, RegisterRequest, AuthResponse } from '~~/types'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -9,43 +9,39 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Actions
   async function login(credentials: LoginRequest) {
-    const { data, error } = await $fetch<AuthResponse>('/api/auth/login', {
+    const response = await $fetch<AuthResponse>('/api/auth/login', {
       method: 'POST',
       body: credentials
-    }).catch((e) => {
+    }).catch((e: any) => {
       return { error: e.message || '登录失败' }
     })
 
-    if (error) {
-      throw new Error(error)
+    if ('error' in response) {
+      throw new Error(response.error)
     }
 
-    if (data) {
-      user.value = data.user
-      token.value = data.token
-    }
+    user.value = response.user
+    token.value = response.token
 
-    return data
+    return response
   }
 
   async function register(credentials: RegisterRequest) {
-    const { data, error } = await $fetch<AuthResponse>('/api/auth/register', {
+    const response = await $fetch<AuthResponse>('/api/auth/register', {
       method: 'POST',
       body: credentials
-    }).catch((e) => {
+    }).catch((e: any) => {
       return { error: e.message || '注册失败' }
     })
 
-    if (error) {
-      throw new Error(error)
+    if ('error' in response) {
+      throw new Error(response.error)
     }
 
-    if (data) {
-      user.value = data.user
-      token.value = data.token
-    }
+    user.value = response.user
+    token.value = response.token
 
-    return data
+    return response
   }
 
   async function fetchMe() {
@@ -53,24 +49,22 @@ export const useAuthStore = defineStore('auth', () => {
       return null
     }
 
-    const { data, error } = await $fetch<{ user: AuthUser }>('/api/auth/me', {
+    const response = await $fetch<{ user: AuthUser }>('/api/auth/me', {
       headers: {
         Authorization: `Bearer ${token.value}`
       }
-    }).catch((e) => {
+    }).catch((e: any) => {
       return { error: e.message || '获取用户信息失败' }
     })
 
-    if (error) {
+    if ('error' in response) {
       logout()
-      throw new Error(error)
+      throw new Error(response.error)
     }
 
-    if (data) {
-      user.value = data.user
-    }
+    user.value = response.user
 
-    return data?.user
+    return response.user
   }
 
   function logout() {
@@ -87,11 +81,5 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     fetchMe,
     logout
-  }
-}, {
-  persist: {
-    key: 'auth',
-    storage: persistedState.localStorage,
-    pick: ['token', 'user']
   }
 })

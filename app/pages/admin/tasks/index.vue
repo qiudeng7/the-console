@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import type { Task, TaskListParams } from '~/types'
+import type { Task, TaskListParams } from '~~/types'
 
 definePageMeta({
   layout: 'admin',
   requiresAdmin: true
 })
 
+import { useTaskStore } from '~~/stores/task'
+
 const taskStore = useTaskStore()
-const authStore = useAuthStore()
 
 const filters = reactive<TaskListParams>({
   page: 1,

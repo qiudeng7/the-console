@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { Task, TaskListParams } from '~/types'
+import type { Task, TaskListParams } from '~~/types'
 
 definePageMeta({
   layout: 'employee'
 })
+
+import { useTaskStore } from '~~/stores/task'
 
 const taskStore = useTaskStore()
 

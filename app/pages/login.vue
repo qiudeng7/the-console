@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { LoginRequest } from '~/types'
+import type { LoginRequest } from '~~/types'
 
 definePageMeta({
   layout: false,
   requiresAuth: false
 })
+
+import { useAuthStore } from '~~/stores/auth'
 
 const authStore = useAuthStore()
 const router = useRouter()
