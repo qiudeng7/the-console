@@ -15,6 +15,8 @@ export default defineNuxtConfig({
   nitro: {
     experimental: {
       openAPI: true
-    }
+    },
+    // 配置端口为 4000（队列服务专用端口）
+    port: 4000
   }
 })

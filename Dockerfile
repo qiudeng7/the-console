@@ -11,6 +11,7 @@ COPY . .
 
 RUN pnpm build
 
-EXPOSE 3000
+# 暴露端口（app 使用 3000，queue 使用 4000）
+EXPOSE 3000 4000
 
 CMD ["node", ".output/server/index.mjs"]

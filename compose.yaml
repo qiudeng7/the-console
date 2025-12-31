@@ -35,7 +35,6 @@ services:
     restart: unless-stopped
     networks:
       - the-console-network
-    command: node server/index.mjs
 
   app:
     build:
