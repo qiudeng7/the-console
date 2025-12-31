@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, isNull } from 'drizzle-orm'
 import { getDb } from '~~/server/database/db'
 import { Task } from '~~/server/database/schema'
 import { extractTokenFromHeader, verifyToken } from '~~/server/utils/jwt'
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
     .from(Task)
     .where(and(
       eq(Task.id, taskId),
-      eq(Task.deletedAt, '')
+      isNull(Task.deletedAt)
     ))
   const task = tasks[0]
 

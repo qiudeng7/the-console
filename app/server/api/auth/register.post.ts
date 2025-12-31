@@ -33,14 +33,14 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查是否是第一个用户
-    const existingUsers = await db
+    const allUsers = await db
       .select()
       .from(User)
 
-    const isFirstUser = existingUsers.length === 0
+    const isFirstUser = allUsers.length === 0
 
     // 插入新用户（明文密码）
-    const newUsers = await db
+    const insertResult = await db
       .insert(User)
       .values({
         email: body.email,
@@ -48,8 +48,21 @@ export default defineEventHandler(async (event) => {
         role: isFirstUser ? 'admin' : 'employee', // 第一个用户为管理员
         version: 1 // 初始版本号（乐观锁）
       })
-      .returning()
+
+    // MySQL Drizzle 不支持 .returning()，需要重新查询获取插入的记录
+    const insertId = (insertResult as any).insertId
+    const newUsers = await db
+      .select()
+      .from(User)
+      .where(eq(User.id, insertId))
     const newUser = newUsers[0]
+
+    if (!newUser) {
+      return {
+        success: false,
+        error: '注册失败'
+      }
+    }
 
     // 生成 JWT token
     const token = generateToken(newUser.id, config.jwtSecret)

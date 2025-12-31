@@ -25,14 +25,14 @@ export default defineEventHandler(async (event) => {
       case 'users':
         // 用户软删除
         await db.update(User)
-          .set({ deletedAt: new Date().toLocaleString() })
+          .set({ deletedAt: new Date() })
           .where(eq(User.id, id))
         break
 
       case 'tasks':
         // 任务软删除
         await db.update(Task)
-          .set({ deletedAt: new Date().toLocaleString() })
+          .set({ deletedAt: new Date() })
           .where(eq(Task.id, id))
         break
 

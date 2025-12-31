@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户状态（软删除）
-    if (user.deletedAt && user.deletedAt !== '') {
+    if (user.deletedAt !== null) {
       return {
         success: false,
         error: '用户已被禁用'

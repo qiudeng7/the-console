@@ -1,6 +1,6 @@
 import { getDb } from '~~/server/database/db'
 import { User, Task, K8sCluster, K8sNode } from '~~/server/database/schema'
-import { eq } from 'drizzle-orm'
+import { eq, isNull } from 'drizzle-orm'
 import { getAdminUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -24,12 +24,12 @@ export default defineEventHandler(async (event) => {
     switch (tableName) {
       case 'users':
         data = await db.select().from(User)
-        .where(eq(User.deletedAt, ''))
+        .where(isNull(User.deletedAt))
         break
 
       case 'tasks':
         data = await db.select().from(Task)
-        .where(eq(Task.deletedAt, ''))
+        .where(isNull(Task.deletedAt))
         break
 
       case 'k8s_clusters':

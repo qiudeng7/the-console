@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, isNull } from 'drizzle-orm'
 import { getDb } from '~~/server/database/db'
 import { Task } from '~~/server/database/schema'
 import { getAdminUser } from '~~/server/utils/auth'
@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const allTasks = await db
     .select()
     .from(Task)
-    .where(eq(Task.deletedAt, ''))
+    .where(isNull(Task.deletedAt))
 
   // 按状态统计
   const byStatus: Record<string, number> = {

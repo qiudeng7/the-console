@@ -1,4 +1,4 @@
-import { eq, and, like, or } from 'drizzle-orm'
+import { eq, and, like, or, isNull } from 'drizzle-orm'
 import { getDb } from '~~/server/database/db'
 import { Task, User } from '~~/server/database/schema'
 import { getAuthUser } from '~~/server/utils/auth'
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查用户状态（软删除）
-  if (currentUser.deletedAt && currentUser.deletedAt !== '') {
+  if (currentUser.deletedAt !== null) {
     throw createError({
       statusCode: 403,
       message: '用户已被禁用'
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   const search = query.search as string | undefined
 
   const conditions = [
-    eq(Task.deletedAt, '')
+    isNull(Task.deletedAt)
   ]
 
   // 根据角色设置不同的查询条件

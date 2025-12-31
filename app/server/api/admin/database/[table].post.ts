@@ -1,5 +1,6 @@
 import { getDb } from '~~/server/database/db'
 import { User, Task, K8sCluster, K8sNode } from '~~/server/database/schema'
+import { eq } from 'drizzle-orm'
 import { getAdminUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -18,7 +19,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const db = getDb()
-    let result: any
+    let insertId: number | undefined
+    let tableNameSchema: any
 
     // 根据表名插入数据
     switch (tableName) {
@@ -32,30 +34,34 @@ export default defineEventHandler(async (event) => {
         }
         const bcrypt = await import('bcryptjs')
         const hashedPassword = await bcrypt.hash(body.password, 10)
-        result = await db.insert(User)
+        const userResult = await db.insert(User)
           .values({
             ...body,
             password: hashedPassword
           })
-          .returning()
+        insertId = (userResult as any).insertId
+        tableNameSchema = User
         break
 
       case 'tasks':
-        result = await db.insert(Task)
+        const taskResult = await db.insert(Task)
           .values(body)
-          .returning()
+        insertId = (taskResult as any).insertId
+        tableNameSchema = Task
         break
 
       case 'k8s_clusters':
-        result = await db.insert(K8sCluster)
+        const clusterResult = await db.insert(K8sCluster)
           .values(body)
-          .returning()
+        insertId = (clusterResult as any).insertId
+        tableNameSchema = K8sCluster
         break
 
       case 'k8s_nodes':
-        result = await db.insert(K8sNode)
+        const nodeResult = await db.insert(K8sNode)
           .values(body)
-          .returning()
+        insertId = (nodeResult as any).insertId
+        tableNameSchema = K8sNode
         break
 
       default:
@@ -65,9 +71,14 @@ export default defineEventHandler(async (event) => {
         }
     }
 
+    // MySQL Drizzle 不支持 .returning()，需要重新查询获取插入的记录
+    const insertedData = await db.select()
+      .from(tableNameSchema)
+      .where(eq(tableNameSchema.id, insertId!))
+
     return {
       success: true,
-      data: result[0]
+      data: insertedData[0]
     }
   } catch (error: any) {
     const tableName = getRouterParam(event, 'table')
