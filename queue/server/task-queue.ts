@@ -105,7 +105,7 @@ export class TaskQueue {
 
   // 处理创建任务
   private async processCreateTasks(jobs: QueueJob[]) {
-    const { Task, User } = await import('../app/server/database/schema')
+    const { Task, User } = await import('./database/schema')
     const { eq } = await import('drizzle-orm')
 
     for (const job of jobs) {
@@ -150,7 +150,7 @@ export class TaskQueue {
 
   // 处理更新任务（带乐观锁）
   private async processUpdateTasks(jobs: QueueJob[]) {
-    const { Task } = await import('../app/server/database/schema')
+    const { Task } = await import('./database/schema')
     const { eq, and } = await import('drizzle-orm')
 
     for (const job of jobs) {
@@ -208,7 +208,7 @@ export class TaskQueue {
 
   // 处理删除任务（软删除，带乐观锁）
   private async processDeleteTasks(jobs: QueueJob[]) {
-    const { Task } = await import('../app/server/database/schema')
+    const { Task } = await import('./database/schema')
     const { eq, and } = await import('drizzle-orm')
 
     for (const job of jobs) {

@@ -1,4 +1,4 @@
-import { getDb } from '../app/server/database/db'
+import { getDb } from './database/db'
 import { TaskQueue } from './task-queue'
 
 // 初始化队列
