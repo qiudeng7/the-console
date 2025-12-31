@@ -3,7 +3,7 @@ import mysql from 'mysql2/promise'
 import * as schema from './schema'
 
 let pool: mysql.Pool | null = null
-let db: ReturnType<typeof drizzle> | null = null
+let db: any = null
 
 export function getDb() {
   if (!db) {

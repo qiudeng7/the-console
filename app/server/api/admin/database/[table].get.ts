@@ -1,6 +1,6 @@
 import { getDb } from '~~/server/database/db'
 import { User, Task, K8sCluster, K8sNode } from '~~/server/database/schema'
-import { eq, isNull } from 'drizzle-orm'
+import { isNull } from 'drizzle-orm'
 import { getAdminUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {

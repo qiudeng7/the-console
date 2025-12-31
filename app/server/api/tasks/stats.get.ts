@@ -1,4 +1,4 @@
-import { eq, isNull } from 'drizzle-orm'
+import { isNull } from 'drizzle-orm'
 import { getDb } from '~~/server/database/db'
 import { Task } from '~~/server/database/schema'
 import { getAdminUser } from '~~/server/utils/auth'
