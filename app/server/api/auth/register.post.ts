@@ -46,7 +46,8 @@ export default defineEventHandler(async (event) => {
       .values({
         email: body.email,
         password: body.password,
-        role: isFirstUser ? 'admin' : 'employee' // 第一个用户为管理员
+        role: isFirstUser ? 'admin' : 'employee', // 第一个用户为管理员
+        version: 1 // 初始版本号（乐观锁）
       })
       .returning()
       .get()

@@ -1,35 +1,8 @@
-import { eq } from 'drizzle-orm'
-import { getDb } from '~~/server/database/db'
-import { Task, User } from '~~/server/database/schema'
 import { getAuthUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
   const authUser = await getAuthUser(event)
-
-  const db = getDb()
-
-  // 获取当前用户信息
-  const currentUser = await db
-    .select()
-    .from(User)
-    .where(eq(User.id, authUser.id))
-    .get()
-
-  if (!currentUser) {
-    throw createError({
-      statusCode: 404,
-      message: '用户不存在'
-    })
-  }
-
-  // 权限检查：员工不能创建任务
-  if (currentUser.role === 'employee') {
-    throw createError({
-      statusCode: 403,
-      message: '员工不能创建任务'
-    })
-  }
 
   const body = await readBody(event)
 
@@ -40,29 +13,31 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const now = new Date().toLocaleString()
+  const queueServiceUrl = process.env.QUEUE_SERVICE_URL || 'http://localhost:4000'
 
-  const newTask = await db
-    .insert(Task)
-    .values({
-      title: body.title,
-      category: body.category || null,
-      tag: body.tag || null,
-      description: body.description || null,
-      status: body.status || 'todo',
-      createdByUserId: authUser.id,
-      assignedToUserId: body.assignedToUserId || null,
-      createdAt: now,
-      updatedAt: now,
-      deletedAt: ''
+  try {
+    // 通过 HTTP 调用队列服务
+    const response = await $fetch(`${queueServiceUrl}/queue/job`, {
+      method: 'POST',
+      body: {
+        type: 'create-task',
+        data: {
+          title: body.title,
+          category: body.category || null,
+          tag: body.tag || null,
+          description: body.description || null,
+          status: body.status || 'todo',
+          createdByUserId: authUser.id,
+          assignedToUserId: body.assignedToUserId || null
+        }
+      }
     })
-    .returning()
-    .get()
 
-  return {
-    success: true,
-    data: {
-      task: newTask
-    }
+    return response
+  } catch (error: any) {
+    throw createError({
+      statusCode: error.statusCode || 500,
+      message: error.message || '创建任务失败'
+    })
   }
 })

@@ -1,6 +1,3 @@
-import { eq } from 'drizzle-orm'
-import { getDb } from '~~/server/database/db'
-import { Task } from '~~/server/database/schema'
 import { getAuthUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -9,49 +6,31 @@ export default defineEventHandler(async (event) => {
     const taskId = parseInt(getRouterParam(event, 'id') || '')
 
     if (isNaN(taskId)) {
-      return {
-        success: false,
-        error: '无效的任务ID'
+      throw createError({
+        statusCode: 400,
+        message: '无效的任务ID'
+      })
+    }
+
+    const queueServiceUrl = process.env.QUEUE_SERVICE_URL || 'http://localhost:4000'
+
+    // 通过 HTTP 调用队列服务
+    const response = await $fetch(`${queueServiceUrl}/queue/job`, {
+      method: 'POST',
+      body: {
+        type: 'delete-task',
+        data: {
+          taskId,
+          userId: authUser.id
+        }
       }
-    }
+    })
 
-    const db = getDb()
-    const task = await db
-      .select()
-      .from(Task)
-      .where(eq(Task.id, taskId))
-      .get()
-
-    if (!task) {
-      return {
-        success: false,
-        error: '任务不存在'
-      }
-    }
-
-    // 只允许任务创建者或管理员删除
-    const isAdmin = authUser.role === 'admin'
-
-    if (task.createdByUserId !== authUser.id && !isAdmin) {
-      return {
-        success: false,
-        error: '无权限删除此任务'
-      }
-    }
-
-    // 软删除
-    await db.update(Task)
-      .set({ deletedAt: new Date().toLocaleString() })
-      .where(eq(Task.id, taskId))
-
-    return {
-      success: true
-    }
+    return response
   } catch (error: any) {
-    console.error('[DELETE /api/tasks/:id] Error:', error)
-    return {
-      success: false,
-      error: error.message || '删除任务失败'
-    }
+    throw createError({
+      statusCode: error.statusCode || 500,
+      message: error.message || '删除任务失败'
+    })
   }
 })
