@@ -9,7 +9,8 @@ export function getDb() {
   if (!db) {
     const connectionUrl = process.env.DATABASE_URL || 'mysql://root:root_password@localhost:3306/the_console'
 
-    pool = mysql.createPool(connectionUrl, {
+    pool = mysql.createPool({
+      uri: connectionUrl,
       connectionLimit: 10,
       enableKeepAlive: true
     })
