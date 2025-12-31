@@ -27,12 +27,12 @@ export default defineEventHandler(async (event) => {
   const db = getDb()
 
   // 1. 读取当前用户和版本号
-  const currentUser = await db
+  const currentUsers = await db
     .select()
     .from(User)
     .where(eq(User.id, userId))
-    .get()
 
+  const currentUser = currentUsers[0]
   if (!currentUser) {
     throw createError({
       statusCode: 404,
@@ -66,8 +66,8 @@ export default defineEventHandler(async (event) => {
       )
     )
 
-  // 4. 检查是否更新成功
-  if (result.rowsAffected === 0) {
+  // 4. 检查是否更新成功（MySQL 使用 affectedRows）
+  if (result.affectedRows === 0) {
     throw createError({
       statusCode: 409,
       message: '用户数据已被其他人修改，请刷新后重试'
@@ -75,11 +75,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // 5. 返回更新后的用户
-  const updatedUser = await db
+  const updatedUsers = await db
     .select()
     .from(User)
     .where(eq(User.id, userId))
-    .get()
+
+  const updatedUser = updatedUsers[0]
 
   return {
     success: true,

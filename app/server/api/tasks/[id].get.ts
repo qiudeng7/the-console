@@ -37,14 +37,14 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
 
-  const task = await db
+  const tasks = await db
     .select()
     .from(Task)
     .where(and(
       eq(Task.id, taskId),
       eq(Task.deletedAt, '')
     ))
-    .get()
+  const task = tasks[0]
 
   if (!task) {
     setResponseStatus(event, 404)

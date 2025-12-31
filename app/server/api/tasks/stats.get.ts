@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
     .select()
     .from(Task)
     .where(eq(Task.deletedAt, ''))
-    .all()
 
   // 按状态统计
   const byStatus: Record<string, number> = {

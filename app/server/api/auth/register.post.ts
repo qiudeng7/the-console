@@ -19,11 +19,11 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig()
 
     // 检查邮箱是否已存在
-    const existingUser = await db
+    const existingUsers = await db
       .select()
       .from(User)
       .where(eq(User.email, body.email))
-      .get()
+    const existingUser = existingUsers[0]
 
     if (existingUser) {
       return {
@@ -36,12 +36,11 @@ export default defineEventHandler(async (event) => {
     const existingUsers = await db
       .select()
       .from(User)
-      .all()
 
     const isFirstUser = existingUsers.length === 0
 
     // 插入新用户（明文密码）
-    const newUser = await db
+    const newUsers = await db
       .insert(User)
       .values({
         email: body.email,
@@ -50,7 +49,7 @@ export default defineEventHandler(async (event) => {
         version: 1 // 初始版本号（乐观锁）
       })
       .returning()
-      .get()
+    const newUser = newUsers[0]
 
     // 生成 JWT token
     const token = generateToken(newUser.id, config.jwtSecret)

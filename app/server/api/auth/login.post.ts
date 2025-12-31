@@ -19,11 +19,11 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig()
 
     // 查找用户
-    const user = await db
+    const users = await db
       .select()
       .from(User)
       .where(eq(User.email, body.email))
-      .get()
+    const user = users[0]
 
     if (!user) {
       return {

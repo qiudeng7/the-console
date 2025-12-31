@@ -10,11 +10,11 @@ export default defineEventHandler(async (event) => {
   const db = getDb()
 
   // 获取当前用户信息
-  const currentUser = await db
+  const currentUsers = await db
     .select()
     .from(User)
     .where(eq(User.id, authUser.id))
-    .get()
+  const currentUser = currentUsers[0]
 
   if (!currentUser) {
     throw createError({
@@ -74,14 +74,12 @@ export default defineEventHandler(async (event) => {
     .where(and(...conditions))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
-    .all()
 
   // 获取总数（用于分页）
   const totalResult = await db
     .select({ count: Task.id })
     .from(Task)
     .where(and(...conditions))
-    .all()
 
   const total = totalResult.length
 

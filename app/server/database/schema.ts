@@ -1,4 +1,5 @@
-import { mysqlTable, varchar, int, text, datetime, sql } from 'drizzle-orm/mysql-core'
+import { sql } from 'drizzle-orm'
+import { mysqlTable, varchar, int, text, datetime } from 'drizzle-orm/mysql-core'
 
 const common = {
   id: int().primaryKey().autoincrement(),

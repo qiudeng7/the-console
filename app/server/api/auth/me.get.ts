@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     const authUser = await verifyAuth(token)
 
     const db = getDb()
-    const user = await db
+    const users = await db
       .select({
         id: User.id,
         email: User.email,
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       })
       .from(User)
       .where(eq(User.id, authUser.id))
-      .get()
+    const user = users[0]
 
     if (!user) {
       return {
