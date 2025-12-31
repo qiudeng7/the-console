@@ -1,12 +1,12 @@
-import { mysqlTable, varchar, int, text, datetime } from 'drizzle-orm/mysql-core'
+import { mysqlTable, varchar, int, text, datetime, sql } from 'drizzle-orm/mysql-core'
 
 const common = {
   id: int().primaryKey().autoincrement(),
 
   /** usage: `...common.timestamps` */
   timestamps: {
-    createdAt: datetime().defaultNow().notNull(),
-    deletedAt: datetime()
+    createdAt: datetime({ fsp: 3 }).default(sql`CURRENT_TIMESTAMP(3)`).notNull(),
+    deletedAt: datetime({ fsp: 3 })
   }
 }
 
@@ -16,7 +16,7 @@ export const User = mysqlTable('user_table', {
   password: varchar('password', { length: 255 }).notNull(),
   role: varchar('role', { length: 20 }).notNull().default('employee'), // 'admin' | 'employee'
   version: int().default(1).notNull(), // 乐观锁版本号
-  updatedAt: datetime().defaultNow().notNull(),
+  updatedAt: datetime({ fsp: 3 }).default(sql`CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)`).notNull(),
   deletedAt: common.timestamps.deletedAt
 })
 
@@ -31,7 +31,7 @@ export const Task = mysqlTable('task_table', {
   assignedToUserId: int().references(() => User.id),
   version: int().default(1).notNull(), // 乐观锁版本号
   createdAt: common.timestamps.createdAt,
-  updatedAt: datetime().defaultNow().notNull(),
+  updatedAt: datetime({ fsp: 3 }).default(sql`CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)`).notNull(),
   deletedAt: common.timestamps.deletedAt
 })
 

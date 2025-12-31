@@ -111,19 +111,19 @@ export class TaskQueue {
     for (const job of jobs) {
       try {
         // 验证用户权限
-        const user = await this.db
+        const users = await this.db
           .select()
           .from(User)
           .where(eq(User.id, job.data.createdByUserId))
-          .get()
 
+        const user = users[0]
         if (!user || user.role === 'employee') {
           job.reject(new Error('用户无权限创建任务'))
           continue
         }
 
         // 创建任务（无需乐观锁，因为是新增）
-        const newTask = await this.db
+        const newTasks = await this.db
           .insert(Task)
           .values({
             title: job.data.title,
@@ -139,8 +139,8 @@ export class TaskQueue {
             deletedAt: null
           })
           .returning()
-          .get()
 
+        const newTask = newTasks[0]
         job.resolve({ taskId: newTask.id, task: newTask })
       } catch (error: any) {
         this.handleJobError(job, error)
@@ -156,12 +156,12 @@ export class TaskQueue {
     for (const job of jobs) {
       try {
         // 读取当前任务和版本号
-        const existingTask = await this.db
+        const existingTasks = await this.db
           .select()
           .from(Task)
           .where(eq(Task.id, job.data.taskId))
-          .get()
 
+        const existingTask = existingTasks[0]
         if (!existingTask) {
           job.reject(new Error('任务不存在'))
           continue
@@ -187,18 +187,18 @@ export class TaskQueue {
             )
           )
 
-        // 检查是否更新成功
-        if (result.rowsAffected === 0) {
+        // 检查是否更新成功（MySQL 使用 affectedRows）
+        if (result.affectedRows === 0) {
           throw new Error('VERSION_CONFLICT')
         }
 
         // 返回更新后的任务
-        const updatedTask = await this.db
+        const updatedTasks = await this.db
           .select()
           .from(Task)
           .where(eq(Task.id, job.data.taskId))
-          .get()
 
+        const updatedTask = updatedTasks[0]
         job.resolve({ taskId: updatedTask.id, task: updatedTask })
       } catch (error: any) {
         this.handleJobError(job, error)
@@ -213,12 +213,12 @@ export class TaskQueue {
 
     for (const job of jobs) {
       try {
-        const existingTask = await this.db
+        const existingTasks = await this.db
           .select()
           .from(Task)
           .where(eq(Task.id, job.data.taskId))
-          .get()
 
+        const existingTask = existingTasks[0]
         if (!existingTask) {
           job.reject(new Error('任务不存在'))
           continue
@@ -243,7 +243,7 @@ export class TaskQueue {
             )
           )
 
-        if (result.rowsAffected === 0) {
+        if (result.affectedRows === 0) {
           throw new Error('VERSION_CONFLICT')
         }
 
