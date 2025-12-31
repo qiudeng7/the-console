@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
   // 按执行人统计
   const byAssignee: Record<number, number> = {}
 
-  allTasks.forEach(task => {
+  allTasks.forEach((task: any) => {
     // 状态统计
     if (task.status) {
       byStatus[task.status] = (byStatus[task.status] || 0) + 1
