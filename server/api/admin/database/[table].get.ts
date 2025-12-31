@@ -23,12 +23,7 @@ export default defineEventHandler(async (event) => {
     // 根据表名查询数据（排除软删除的记录）
     switch (tableName) {
       case 'users':
-        data = await db.select({
-          id: User.id,
-          email: User.email,
-          role: User.role,
-          createdAt: User.createdAt
-        }).from(User)
+        data = await db.select().from(User)
         .where(eq(User.deletedAt, ''))
         break
 

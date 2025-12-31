@@ -8,12 +8,48 @@ definePageMeta({
 
 const authStore = useAuthStore()
 
-// 表格列表
+// 表格列表及其字段定义
 const tables = ref([
-  { name: 'users', displayName: '用户' },
-  { name: 'tasks', displayName: '任务' },
-  { name: 'k8s_clusters', displayName: 'K8s集群' },
-  { name: 'k8s_nodes', displayName: 'K8s节点' }
+  {
+    name: 'users',
+    displayName: '用户',
+    fields: [
+      { name: 'email', type: 'email', required: true },
+      { name: 'password', type: 'password', required: true },
+      { name: 'role', type: 'role', required: false }
+    ]
+  },
+  {
+    name: 'tasks',
+    displayName: '任务',
+    fields: [
+      { name: 'title', type: 'text', required: true },
+      { name: 'description', type: 'text', required: false },
+      { name: 'status', type: 'status', required: false },
+      { name: 'category', type: 'text', required: false },
+      { name: 'tag', type: 'text', required: false },
+      { name: 'createdByUserId', type: 'number', required: true },
+      { name: 'assignedToUserId', type: 'number', required: false }
+    ]
+  },
+  {
+    name: 'k8s_clusters',
+    displayName: 'K8s集群',
+    fields: [
+      { name: 'name', type: 'text', required: true },
+      { name: 'endpoint', type: 'text', required: true },
+      { name: 'token', type: 'text', required: false }
+    ]
+  },
+  {
+    name: 'k8s_nodes',
+    displayName: 'K8s节点',
+    fields: [
+      { name: 'clusterId', type: 'number', required: true },
+      { name: 'name', type: 'text', required: true },
+      { name: 'status', type: 'text', required: false }
+    ]
+  }
 ])
 
 const selectedTable = ref('users')
@@ -175,12 +211,19 @@ async function deleteRecord() {
 
 // 获取所有可编辑的字段及其类型
 const editableFields = computed(() => {
+  // 优先使用预定义的字段
+  const tableConfig = tables.value.find(t => t.name === selectedTable.value)
+  if (tableConfig && tableConfig.fields) {
+    return tableConfig.fields
+  }
+
+  // 如果没有预定义，尝试从数据推断（用于编辑已存在的记录）
   if (tableData.value.length === 0 || !tableData.value[0]) return []
   const row = tableData.value[0]
   const readonlyFields = ['id', 'createdAt', 'deletedAt', 'updatedAt']
 
   return Object.keys(row)
-    .filter(col => col !== 'password' && !readonlyFields.includes(col))
+    .filter(col => !readonlyFields.includes(col))
     .map(col => {
       const value = row[col]
       let fieldType = 'text'
@@ -198,7 +241,7 @@ const editableFields = computed(() => {
 // 获取表头（用于显示）
 const columns = computed(() => {
   if (tableData.value.length === 0 || !tableData.value[0]) return []
-  return Object.keys(tableData.value[0]).filter(c => c !== 'password')
+  return Object.keys(tableData.value[0])
 })
 
 // 初始加载
