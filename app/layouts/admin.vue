@@ -15,8 +15,9 @@ async function handleLogout() {
 }
 
 const navigation = [
+  { name: '仪表盘', href: '/admin/dashboard' },
   { name: '任务管理', href: '/admin/tasks' },
-  { name: '用户管理', href: '/admin/users' }
+  { name: '应用管理', href: '/admin/apps' }
 ]
 </script>
 

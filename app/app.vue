@@ -5,15 +5,14 @@ const authStore = useAuthStore()
 const router = useRouter()
 
 onMounted(() => {
-  // 如果已登录，根据角色跳转
+  // 已登录跳转到 dashboard，未登录跳转到登录页
   if (authStore.isAuthenticated) {
     if (authStore.isAdmin) {
-      router.replace('/admin/tasks')
+      router.replace('/admin/dashboard')
     } else {
       router.replace('/employee/tasks')
     }
   } else {
-    // 未登录跳转到登录页
     router.replace('/login')
   }
 })
