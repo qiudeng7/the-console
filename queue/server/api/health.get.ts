@@ -1,5 +1,5 @@
-import { getDb } from '../../database/db'
-import { TaskQueue } from '../../task-queue'
+import { getDb } from '~/server/database/db'
+import { TaskQueue } from '~/server/task-queue'
 
 // 初始化队列（单例）
 const db = getDb()
@@ -14,3 +14,4 @@ export { queue }
 export default defineEventHandler(async (event) => {
   return { status: 'ok' }
 })
+
