@@ -27,6 +27,7 @@ services:
     environment:
       DATABASE_URL: mysql://${MYSQL_USER:-the_console_user}:${MYSQL_PASSWORD:-the_console_password}@mysql:3306/${MYSQL_DATABASE:-the_console}
       NODE_ENV: production
+      PORT: 4000
     depends_on:
       mysql:
         condition: service_healthy

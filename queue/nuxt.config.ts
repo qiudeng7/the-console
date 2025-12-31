@@ -17,6 +17,11 @@ export default defineNuxtConfig({
       openAPI: true
     },
     // 配置端口为 4000（队列服务专用端口）
-    port: 4000
-  }
+    port: 4000,
+    // 禁用 SSR，这是纯 API 服务
+    ssr: false
+  },
+
+  // 禁用 Vue Router 和 SPA
+  ssr: true
 })
