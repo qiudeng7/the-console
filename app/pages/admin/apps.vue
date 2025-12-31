@@ -10,16 +10,26 @@ const authStore = useAuthStore()
 
 // 表格列表
 const tables = ref([
-  { name: 'users', displayName: '用户', count: 0 },
-  { name: 'tasks', displayName: '任务', count: 0 },
-  { name: 'k8s_clusters', displayName: 'K8s集群', count: 0 },
-  { name: 'k8s_nodes', displayName: 'K8s节点', count: 0 }
+  { name: 'users', displayName: '用户' },
+  { name: 'tasks', displayName: '任务' },
+  { name: 'k8s_clusters', displayName: 'K8s集群' },
+  { name: 'k8s_nodes', displayName: 'K8s节点' }
 ])
 
 const selectedTable = ref('users')
 const tableData = ref<any[]>([])
 const loading = ref(false)
 const error = ref('')
+
+// 模态框状态
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const showDeleteModal = ref(false)
+const editingRow = ref<any>(null)
+const deletingRow = ref<any>(null)
+
+// 表单数据
+const formData = ref<any>({})
 
 // 获取表格数据
 async function fetchTableData(tableName: string) {
@@ -57,15 +67,143 @@ async function selectTable(tableName: string) {
 // 获取表头
 function getColumns() {
   if (tableData.value.length === 0) return []
-  return Object.keys(tableData.value[0])
+  const cols = Object.keys(tableData.value[0])
+  // 排除密码字段
+  return cols.filter(c => c !== 'password')
 }
 
 // 格式化值
 function formatValue(value: any): string {
   if (value === null) return 'NULL'
-  if (value === undefined) return 'undefined'
+  if (value === undefined) return '-'
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
+}
+
+// 打开创建模态框
+function openCreateModal() {
+  formData.value = {}
+  showCreateModal.value = true
+}
+
+// 打开编辑模态框
+function openEditModal(row: any) {
+  editingRow.value = row
+  formData.value = { ...row }
+  showEditModal.value = true
+}
+
+// 打开删除确认框
+function openDeleteModal(row: any) {
+  deletingRow.value = row
+  showDeleteModal.value = true
+}
+
+// 创建记录
+async function createRecord() {
+  loading.value = true
+  try {
+    const response = await $fetch(`/api/admin/database/${selectedTable.value}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authStore.token}`
+      },
+      body: formData.value
+    }).catch((e: any) => {
+      return { error: e.message || '创建失败' }
+    })
+
+    if ('error' in response) {
+      throw new Error(response.error)
+    }
+
+    showCreateModal.value = false
+    await fetchTableData(selectedTable.value)
+  } catch (e: any) {
+    alert(e.message || '创建失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 更新记录
+async function updateRecord() {
+  loading.value = true
+  try {
+    const response = await $fetch(`/api/admin/database/${selectedTable.value}/${editingRow.value.id}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${authStore.token}`
+      },
+      body: formData.value
+    }).catch((e: any) => {
+      return { error: e.message || '更新失败' }
+    })
+
+    if ('error' in response) {
+      throw new Error(response.error)
+    }
+
+    showEditModal.value = false
+    editingRow.value = null
+    await fetchTableData(selectedTable.value)
+  } catch (e: any) {
+    alert(e.message || '更新失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 删除记录
+async function deleteRecord() {
+  loading.value = true
+  try {
+    const response = await $fetch(`/api/admin/database/${selectedTable.value}/${deletingRow.value.id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${authStore.token}`
+      }
+    }).catch((e: any) => {
+      return { error: e.message || '删除失败' }
+    })
+
+    if ('error' in response) {
+      throw new Error(response.error)
+    }
+
+    showDeleteModal.value = false
+    deletingRow.value = null
+    await fetchTableData(selectedTable.value)
+  } catch (e: any) {
+    alert(e.message || '删除失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 判断字段是否可编辑
+function isEditable(column: string): boolean {
+  const readonlyFields = ['id', 'createdAt', 'deletedAt', 'updatedAt']
+  return !readonlyFields.includes(column)
+}
+
+// 判断是否是密码字段
+function isPasswordField(column: string): boolean {
+  return column === 'password'
+}
+
+// 获取字段类型
+function getFieldType(column: string): string {
+  const row = tableData.value[0]
+  if (!row) return 'text'
+
+  const value = row[column]
+  if (typeof value === 'number') return 'number'
+  if (column.includes('password')) return 'password'
+  if (column.includes('email')) return 'email'
+  if (column.includes('role')) return 'role'
+  if (column.includes('status')) return 'status'
+  return 'text'
 }
 
 // 初始加载
@@ -125,19 +263,30 @@ onMounted(() => {
               {{ tables.find(t => t.name === selectedTable)?.displayName }} 数据
               <span class="ml-2 text-sm text-gray-500">({{ tableData.length }} 条记录)</span>
             </h3>
-            <button
-              @click="fetchTableData(selectedTable)"
-              class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              刷新
-            </button>
+            <div class="flex gap-2">
+              <button
+                @click="openCreateModal"
+                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                新增
+              </button>
+              <button
+                @click="fetchTableData(selectedTable)"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                刷新
+              </button>
+            </div>
           </div>
 
           <!-- Loading -->
-          <div v-if="loading" class="text-center py-12">
+          <div v-if="loading && tableData.length === 0" class="text-center py-12">
             <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -182,6 +331,9 @@ onMounted(() => {
                   >
                     {{ column }}
                   </th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    操作
+                  </th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
@@ -195,9 +347,122 @@ onMounted(() => {
                       {{ formatValue(row[column]) }}
                     </span>
                   </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      @click="openEditModal(row)"
+                      class="text-indigo-600 hover:text-indigo-900 mr-4"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      @click="openDeleteModal(row)"
+                      class="text-red-600 hover:text-red-900"
+                    >
+                      删除
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Modal -->
+    <div v-if="showCreateModal" class="fixed z-10 inset-0 overflow-y-auto">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showCreateModal = false"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">新增记录</h3>
+            <div class="space-y-4">
+              <div v-for="column in getColumns()" :key="column" class="flex flex-col" v-if="isEditable(column)">
+                <label class="text-sm font-medium text-gray-700">{{ column }}</label>
+                <select v-if="getFieldType(column) === 'role'" v-model="formData[column]" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <option value="">请选择</option>
+                  <option value="admin">管理员</option>
+                  <option value="employee">员工</option>
+                </select>
+                <input v-else-if="getFieldType(column) === 'status'" v-model="formData[column]" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="todo, in_progress, in_review, done, cancelled">
+                <input v-else v-model="formData[column]" :type="getFieldType(column)" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button @click="createRecord" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+              创建
+            </button>
+            <button @click="showCreateModal = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+              取消
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div v-if="showEditModal" class="fixed z-10 inset-0 overflow-y-auto">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showEditModal = false"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">编辑记录</h3>
+            <div class="space-y-4">
+              <div v-for="column in getColumns()" :key="column" class="flex flex-col" v-if="isEditable(column)">
+                <label class="text-sm font-medium text-gray-700">{{ column }}</label>
+                <select v-if="getFieldType(column) === 'role'" v-model="formData[column]" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <option value="">请选择</option>
+                  <option value="admin">管理员</option>
+                  <option value="employee">员工</option>
+                </select>
+                <input v-else-if="getFieldType(column) === 'status'" v-model="formData[column]" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="todo, in_progress, in_review, done, cancelled">
+                <input v-else v-model="formData[column]" :type="getFieldType(column)" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button @click="updateRecord" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+              保存
+            </button>
+            <button @click="showEditModal = false; editingRow = null" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+              取消
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div v-if="showDeleteModal" class="fixed z-10 inset-0 overflow-y-auto">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showDeleteModal = false"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">确认删除</h3>
+                <div class="mt-2">
+                  <p class="text-sm text-gray-500">确定要删除这条记录吗？此操作无法撤销。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button @click="deleteRecord" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+              删除
+            </button>
+            <button @click="showDeleteModal = false; deletingRow = null" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+              取消
+            </button>
           </div>
         </div>
       </div>
