@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
-import { getDb } from '~/server/database/db'
-import { Task, User } from '~/server/database/schema'
-import { extractTokenFromHeader, verifyToken } from '~/server/utils/jwt'
+import { getDb } from '~~/server/database/db'
+import { Task, User } from '~~/server/database/schema'
+import { extractTokenFromHeader, verifyToken } from '~~/server/utils/jwt'
 
 export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, 'authorization')

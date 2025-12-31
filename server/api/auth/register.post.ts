@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
-import { getDb } from '~/server/database/db'
-import { User } from '~/server/database/schema'
-import { generateToken } from '~/server/utils/jwt'
+import { getDb } from '~~/server/database/db'
+import { User } from '~~/server/database/schema'
+import { generateToken } from '~~/server/utils/jwt'
 
 export default defineEventHandler(async (event) => {
   // 只支持 POST 请求

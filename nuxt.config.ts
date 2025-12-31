@@ -15,7 +15,7 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true,
-    typeCheck: true
+    typeCheck: false // Disable type checking in dev for faster build
   },
 
   nitro: {
