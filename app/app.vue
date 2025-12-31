@@ -3,16 +3,10 @@
 </script>
 
 <template>
-  <div class="color-mode">
+  <div>
     <NuxtRouteAnnouncer />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
   </div>
 </template>
-
-<style>
-.color-mode {
-  min-height: 100vh;
-}
-</style>

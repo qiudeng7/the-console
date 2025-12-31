@@ -10,6 +10,7 @@
 - 任务状态管理
 - 任务搜索和过滤
 - 响应式 UI（Tailwind CSS）
+- **暗色模式支持** - 支持浅色/深色主题切换，自动保存用户偏好
 
 ## 技术栈
 
@@ -18,6 +19,7 @@
 - **数据库**: SQLite + Drizzle ORM
 - **状态管理**: Pinia
 - **认证**: JWT (jsonwebtoken)
+- **UI 主题**: @nuxtjs/color-mode (暗色模式支持)
 
 ## 安装
 
@@ -72,6 +74,7 @@ pnpm db:studio
 - 第一个注册的用户自动成为管理员
 - JWT Token 有效期：7 天
 - 数据库文件：`./database.sqlite`
+- **主题模式**: 默认跟随系统，支持手动切换浅色/深色模式
 
 ## API 端点
 
@@ -92,25 +95,44 @@ pnpm db:studio
 
 ```
 ├── app/                 # Nuxt app 目录
-├── components/          # Vue 组件
-├── layouts/            # 布局组件
-│   ├── admin.vue       # 管理员布局
-│   └── employee.vue    # 员工布局
-├── middleware/         # 中间件
-│   └── auth.ts        # 认证中间件
-├── pages/             # 页面组件
-│   ├── admin/        # 管理员页面
-│   ├── employee/     # 员工页面
-│   ├── login.vue     # 登录页
-│   └── register.vue  # 注册页
-├── server/           # 服务端代码
-│   ├── api/         # API 端点
-│   ├── database/    # 数据库相关
-│   └── utils/       # 工具函数
-├── stores/          # Pinia stores
-├── types/           # TypeScript 类型定义
-└── nuxt.config.ts   # Nuxt 配置
+│   ├── layouts/        # 布局组件
+│   │   ├── admin.vue   # 管理员布局（含暗色模式切换）
+│   │   └── employee.vue # 员工布局（含暗色模式支持）
+│   ├── pages/          # 页面组件
+│   │   ├── admin/      # 管理员页面
+│   │   │   ├── dashboard.vue  # 仪表盘（支持暗色模式）
+│   │   │   ├── tasks/        # 任务管理（支持暗色模式）
+│   │   │   └── apps.vue      # 应用管理（支持暗色模式）
+│   │   ├── employee/   # 员工页面
+│   │   │   └── tasks/        # 员工任务（支持暗色模式）
+│   │   ├── login.vue   # 登录页（含暗色模式切换）
+│   │   └── register.vue # 注册页
+│   └── stores/         # Pinia stores
+├── server/             # 服务端代码
+│   ├── api/           # API 端点
+│   ├── database/      # 数据库相关
+│   └── utils/         # 工具函数
+├── types/             # TypeScript 类型定义
+├── tailwind.config.js # Tailwind CSS 配置（class 模式暗色支持）
+└── nuxt.config.ts     # Nuxt 配置（含 color-mode 模块配置）
 ```
+
+## 暗色模式实现
+
+项目使用 `@nuxtjs/color-mode` 模块实现完整的暗色模式支持：
+
+### 特性
+- **自动检测**: 默认跟随系统主题设置
+- **手动切换**: 通过页面上的切换按钮在浅色/深色模式间切换
+- **持久化**: 用户选择的主题偏好会保存在 localStorage 中
+- **全局适配**: 所有页面、组件、表单、表格和模态框均已适配暗色模式
+
+### 样式规范
+- 背景色: `bg-white dark:bg-gray-800`
+- 文本色: `text-gray-900 dark:text-white`
+- 边框色: `border-gray-200 dark:border-gray-700`
+- 输入框: `dark:bg-gray-700 dark:text-white dark:border-gray-600`
+- 表格表头: `bg-gray-50 dark:bg-gray-700`
 
 ## 构建
 

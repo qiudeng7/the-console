@@ -19,14 +19,14 @@ const navigation = [
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
     <!-- Navigation -->
-    <nav class="bg-white shadow">
+    <nav class="bg-white dark:bg-gray-800 shadow">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex">
             <div class="flex-shrink-0 flex items-center">
-              <h1 class="text-xl font-bold text-gray-900">员工工作台</h1>
+              <h1 class="text-xl font-bold text-gray-900 dark:text-white">员工工作台</h1>
             </div>
             <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
               <NuxtLink
@@ -34,15 +34,15 @@ const navigation = [
                 :key="item.name"
                 :to="item.href"
                 class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                active-class="border-indigo-500 text-gray-900"
-                inactive-class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                active-class="border-indigo-500 text-gray-900 dark:text-gray-100"
+                inactive-class="border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200"
               >
                 {{ item.name }}
               </NuxtLink>
             </div>
           </div>
           <div class="flex items-center">
-            <span class="text-sm text-gray-700 mr-4">
+            <span class="text-sm text-gray-700 dark:text-gray-300 mr-4">
               {{ authStore.user?.email }}
             </span>
             <button
