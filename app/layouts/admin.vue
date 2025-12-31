@@ -11,9 +11,15 @@ const authStore = useAuthStore()
 const router = useRouter()
 const sidebarOpen = ref(false)
 
+const colorMode = useColorMode()
+
 async function handleLogout() {
   authStore.logout()
   await router.push('/login')
+}
+
+function toggleColorMode() {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
 
 const navigation = [
@@ -24,7 +30,7 @@ const navigation = [
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
     <!-- Mobile sidebar backdrop -->
     <div
       v-if="sidebarOpen"
@@ -38,13 +44,13 @@ const navigation = [
       <!-- Sidebar -->
       <div
         :class="[
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
+          'fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         ]"
       >
         <!-- Logo -->
-        <div class="flex items-center justify-center h-16 border-b border-gray-200">
-          <h1 class="text-xl font-bold text-gray-900">管理控制台</h1>
+        <div class="flex items-center justify-center h-16 border-b border-gray-200 dark:border-gray-700">
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">管理控制台</h1>
         </div>
 
         <!-- Navigation -->
@@ -54,14 +60,14 @@ const navigation = [
             :key="item.name"
             :to="item.href"
             class="group flex items-center px-2 py-2 text-sm font-medium rounded-md mb-1"
-            active-class="bg-indigo-50 text-indigo-600"
-            inactive-class="text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            active-class="bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300"
+            inactive-class="text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
             @click="sidebarOpen = false"
           >
             <svg
               class="mr-3 h-5 w-5"
               :class="[
-                $route.path === item.href ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'
+                $route.path === item.href ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'
               ]"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -75,7 +81,7 @@ const navigation = [
         </nav>
 
         <!-- User info -->
-        <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+        <div class="absolute bottom-0 w-full p-4 border-t border-gray-200 dark:border-gray-700">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
@@ -85,8 +91,8 @@ const navigation = [
               </div>
             </div>
             <div class="ml-3">
-              <p class="text-sm font-medium text-gray-700">{{ authStore.user?.email }}</p>
-              <p class="text-xs text-gray-500">管理员</p>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ authStore.user?.email }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">管理员</p>
             </div>
           </div>
           <button
@@ -98,24 +104,49 @@ const navigation = [
             </svg>
             退出登录
           </button>
+          <!-- Dark mode toggle -->
+          <button
+            @click="toggleColorMode"
+            class="mt-2 w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+            title="切换颜色模式"
+          >
+            <svg v-if="colorMode.value === 'dark'" class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg v-else class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            {{ colorMode.value === 'dark' ? '浅色模式' : '深色模式' }}
+          </button>
         </div>
       </div>
 
       <!-- Main content -->
       <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Top bar -->
-        <div class="bg-white shadow-sm lg:hidden">
+        <div class="bg-white dark:bg-gray-800 shadow-sm lg:hidden">
           <div class="flex items-center justify-between h-16 px-4">
             <button
               @click="sidebarOpen = !sidebarOpen"
-              class="text-gray-500 hover:text-gray-700 focus:outline-none"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
             >
               <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h1 class="text-lg font-bold text-gray-900">管理控制台</h1>
-            <div class="h-8 w-8"></div>
+            <h1 class="text-lg font-bold text-gray-900 dark:text-white">管理控制台</h1>
+            <button
+              @click="toggleColorMode"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
+              title="切换颜色模式"
+            >
+              <svg v-if="colorMode.value === 'dark'" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <svg v-else class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </button>
           </div>
         </div>
 

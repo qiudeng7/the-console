@@ -5,7 +5,19 @@ export default defineNuxtConfig({
 
   pages: true,
 
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', 'pinia-plugin-persistedstate'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', 'pinia-plugin-persistedstate', '@nuxtjs/color-mode'],
+
+  colorMode: {
+    classSuffix: '',
+    preference: 'system',
+    fallback: 'light',
+    dataValue: 'theme'
+  },
+
+  tailwindcss: {
+    cssPath: '~/~/node_modules/@nuxtjs/tailwindcss/runtime/tailwind.css',
+    configPath: 'tailwind.config.js',
+  },
 
   runtimeConfig: {
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
