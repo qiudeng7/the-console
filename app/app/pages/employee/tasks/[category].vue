@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { Task, TaskListParams } from '~~/types'
 import { EMPLOYEE_TASK_TYPES } from '~~/app/config/employee-task-types'
+import TaskForm from './_components/TaskForm.vue'
+import TaskDetail from './_components/TaskDetail.vue'
+import TaskCompletionMessage from './_components/TaskCompletionMessage.vue'
 
 definePageMeta({
   layout: 'employee'

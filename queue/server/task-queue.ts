@@ -23,16 +23,35 @@ export class TaskQueue {
     this.startFlushTimer()
   }
 
-  /** 添加任务到队列 */
+  /** 添加任务并异步处理 */
   async add<T>(type: QueueJob['type'], data: Record<string, unknown>): Promise<T> {
+    console.log('[TaskQueue] Processing job:', type, data.taskId || data.title)
+
     return new Promise((resolve, reject) => {
       const job: QueueJob = { type, data, resolve, reject, attempts: 0, maxAttempts: 3 }
-      this.queue.push(job)
 
-      if (this.queue.length >= this.batchSize) {
-        this.flush().catch(console.error)
-      }
+      // 异步处理任务，确保不阻塞
+      this.processJobAsync(job).then(result => {
+        resolve(result as T)
+      }).catch(error => {
+        reject(error)
+      })
     })
+  }
+
+  /** 异步处理单个任务 */
+  private async processJobAsync(job: QueueJob): Promise<unknown> {
+    console.log('[TaskQueue] Starting job processing, type:', job.type)
+    try {
+      await this.processJobsByType(job.type, [job])
+      console.log('[TaskQueue] Job completed successfully')
+      // 返回result，如果resolve被调用的话
+      return { success: true }
+    } catch (error) {
+      console.error('[TaskQueue] Job processing failed:', error)
+      this.handleJobError(job, error)
+      throw error
+    }
   }
 
   /** 启动定时刷新 */
@@ -44,21 +63,43 @@ export class TaskQueue {
 
   /** 批量处理队列 */
   private async flush() {
-    if (this.processing || this.queue.length === 0) return
+    if (this.processing) {
+      console.log('[TaskQueue] Already processing, skipping flush')
+      return
+    }
 
+    if (this.queue.length === 0) {
+      console.log('[TaskQueue] Queue is empty, skipping flush')
+      return
+    }
+
+    console.log('[TaskQueue] Flushing queue, size:', this.queue.length)
     this.processing = true
     const jobs = this.queue.splice(0, this.batchSize)
+    console.log('[TaskQueue] Spliced', jobs.length, 'jobs from queue, remaining:', this.queue.length)
 
     try {
       const grouped = this.groupJobsByType(jobs)
+      console.log('[TaskQueue] Grouped jobs:', Object.keys(grouped))
       for (const [type, jobsOfThisType] of Object.entries(grouped)) {
+        console.log('[TaskQueue] Processing type:', type, 'count:', jobsOfThisType.length)
         await this.processJobsByType(type, jobsOfThisType)
+        console.log('[TaskQueue] Finished processing type:', type)
       }
     } catch (error) {
       console.error('队列处理失败:', error)
       this.queue.unshift(...jobs)
     } finally {
       this.processing = false
+      console.log('[TaskQueue] Flush complete, processing = false')
+
+      // 如果还有任务，继续处理
+      if (this.queue.length > 0) {
+        console.log('[TaskQueue] More jobs in queue, triggering another flush')
+        setTimeout(() => {
+          this.flush().catch(console.error)
+        }, 0)
+      }
     }
   }
 
@@ -136,14 +177,21 @@ export class TaskQueue {
 
   /** 处理更新任务（带乐观锁） */
   private async processUpdateTasks(jobs: QueueJob[]) {
+    console.log('[TaskQueue] processUpdateTasks called')
     const { Task } = await import('./database/schema')
     const { eq, and } = await import('drizzle-orm')
 
     for (const job of jobs) {
+      console.log('[TaskQueue] Processing job, taskId:', job.data.taskId)
       try {
+        console.log('[TaskQueue] Getting task with permission check')
         const existingTask = await this.getTaskWithPermissionCheck(job, Task, eq)
-        if (!existingTask) continue
+        if (!existingTask) {
+          console.log('[TaskQueue] No existing task or permission denied')
+          continue
+        }
 
+        console.log('[TaskQueue] Updating task in database')
         const result = await this.db
           .update(Task)
           .set({
@@ -153,13 +201,19 @@ export class TaskQueue {
           })
           .where(and(eq(Task.id, job.data.taskId as number), eq(Task.version, existingTask.version)))
 
+        console.log('[TaskQueue] Update result, affectedRows:', result.affectedRows)
+
         if (result.affectedRows === 0) {
           throw new Error('VERSION_CONFLICT')
         }
 
+        console.log('[TaskQueue] Fetching updated task')
         const updatedTasks = await this.db.select().from(Task).where(eq(Task.id, job.data.taskId as number))
+        console.log('[TaskQueue] Resolving job')
         job.resolve({ taskId: updatedTasks[0].id, task: updatedTasks[0] })
+        console.log('[TaskQueue] Job resolved')
       } catch (error: unknown) {
+        console.error('[TaskQueue] Error processing job:', error)
         this.handleJobError(job, error)
       }
     }
@@ -201,7 +255,11 @@ export class TaskQueue {
       return null
     }
 
-    if (existingTask.createdByUserId !== job.data.userId) {
+    // 允许创建者或被分配的员工修改任务
+    const hasPermission = existingTask.createdByUserId === job.data.userId ||
+                         existingTask.assignedToUserId === job.data.userId
+
+    if (!hasPermission) {
       job.reject(new Error('无权限修改此任务'))
       return null
     }
