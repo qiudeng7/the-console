@@ -123,7 +123,7 @@ export class TaskQueue {
         }
 
         // 创建任务（无需乐观锁，因为是新增）
-        const newTasks = await this.db
+        const insertResult = await this.db
           .insert(Task)
           .values({
             title: job.data.title,
@@ -138,9 +138,25 @@ export class TaskQueue {
             updatedAt: new Date(),
             deletedAt: null
           })
-          .returning()
+
+        // MySQL Drizzle 不支持 .returning()，需要重新查询
+        // insertResult 是数组，第一个元素包含 insertId
+        const result = (insertResult as any)[0] || insertResult
+        const insertId = result.insertId
+        console.log('[TaskQueue] Insert ID:', insertId)
+
+        const newTasks = await this.db
+          .select()
+          .from(Task)
+          .where(eq(Task.id, insertId))
+
+        console.log('[TaskQueue] Query result:', newTasks.length, 'tasks')
 
         const newTask = newTasks[0]
+        if (!newTask) {
+          throw new Error(`Task not found after insert. InsertId: ${insertId}`)
+        }
+
         job.resolve({ taskId: newTask.id, task: newTask })
       } catch (error: any) {
         this.handleJobError(job, error)

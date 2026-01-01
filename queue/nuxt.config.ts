@@ -7,6 +7,8 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  ssr: true, // 启用 SSR，让 API 路由能正常工作
+
   runtimeConfig: {
     // Private keys (only available server-side)
     databaseUrl: process.env.DATABASE_URL,

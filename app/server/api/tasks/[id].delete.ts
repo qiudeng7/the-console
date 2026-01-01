@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     const queueServiceUrl = process.env.QUEUE_SERVICE_URL || 'http://localhost:4000'
 
     // 通过 HTTP 调用队列服务
-    const response = await $fetch(`${queueServiceUrl}/queue/job`, {
+    const response = await $fetch(`${queueServiceUrl}/api/queue/job`, {
       method: 'POST',
       body: {
         type: 'delete-task',

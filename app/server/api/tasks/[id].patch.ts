@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 通过 HTTP 调用队列服务
-    const response = await $fetch(`${queueServiceUrl}/queue/job`, {
+    const response = await $fetch(`${queueServiceUrl}/api/queue/job`, {
       method: 'POST',
       body: {
         type: 'update-task',
