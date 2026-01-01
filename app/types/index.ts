@@ -75,3 +75,24 @@ export interface ApiResponse<T = any> {
   message?: string
   error?: string
 }
+
+// 员工端任务类型相关
+export interface FormField {
+  name: string
+  label: string
+  type: 'text' | 'textarea' | 'number' | 'select' | 'boolean' | 'date'
+  required?: boolean
+  placeholder?: string
+  options?: string[]
+  defaultValue?: any
+}
+
+export interface EmployeeTaskType {
+  name: string
+  category: string
+  route: string
+  icon: string
+  requiresForm: boolean
+  formFields?: FormField[]
+  description?: string
+}

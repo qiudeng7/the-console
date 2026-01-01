@@ -1,4 +1,22 @@
 services:
+  # 数据库迁移服务（只运行一次）
+  migration:
+    build:
+      context: ./app
+      dockerfile: ../Dockerfile
+    container_name: the-console-migration
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-the_console_user}:${MYSQL_PASSWORD:-the_console_password}@mysql:3306/${MYSQL_DATABASE:-the_console}
+      NODE_ENV: production
+    # 安装 tsx 并运行 TypeScript 迁移脚本
+    command: ["sh", "-c", "npm install -g tsx && npx tsx scripts/migrate.ts"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"  # 只运行一次
+    networks:
+      - the-console-network
+
   mysql:
     image: mysql:8.0
     container_name: the-console-mysql
@@ -29,8 +47,8 @@ services:
       NODE_ENV: production
       PORT: 4000
     depends_on:
-      mysql:
-        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
     ports:
       - "4000:4000"
     restart: unless-stopped
@@ -47,8 +65,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
       NODE_ENV: production
     depends_on:
-      mysql:
-        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
       queue:
         condition: service_started
     restart: unless-stopped

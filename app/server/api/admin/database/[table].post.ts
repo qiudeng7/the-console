@@ -25,20 +25,15 @@ export default defineEventHandler(async (event) => {
     // 根据表名插入数据
     switch (tableName) {
       case 'users':
-        // 用户需要密码哈希
+        // 用户密码明文存储
         if (!body.password) {
           return {
             success: false,
             error: '密码不能为空'
           }
         }
-        const bcrypt = await import('bcryptjs')
-        const hashedPassword = await bcrypt.hash(body.password, 10)
         const userResult = await db.insert(User)
-          .values({
-            ...body,
-            password: hashedPassword
-          })
+          .values(body)
         insertId = (userResult as any).insertId
         tableNameSchema = User
         break
