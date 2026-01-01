@@ -2,6 +2,9 @@
 
 基于 Nuxt 4 + MySQL 8.0 的任务管理系统，采用队列架构和乐观锁机制实现多实例部署。
 
+原serverless架构项目: https://github.com/qiudeng7/deprecated-the-console-serverless
+
+
 ## 技术栈
 
 ### 前端
