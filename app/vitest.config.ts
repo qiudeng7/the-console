@@ -12,7 +12,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'server/', 'app/', '.nuxt/', '.output/']
+      exclude: [
+        'node_modules/',
+        '.nuxt/',
+        '.output/',
+        'tests/',
+        '**/*.test.ts',
+        '**/*.spec.ts',
+        'coverage/'
+      ]
     }
   },
   resolve: {

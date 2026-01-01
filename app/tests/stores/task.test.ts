@@ -81,6 +81,9 @@ describe('Task Store', () => {
       await store.fetchTasks({ status: 'todo', page: 1, pageSize: 10, search: 'test' })
 
       expect($fetch).toHaveBeenCalledWith('/api/tasks', {
+        headers: {
+          Authorization: 'Bearer null'
+        },
         params: { status: 'todo', page: 1, pageSize: 10, search: 'test' }
       })
     })
