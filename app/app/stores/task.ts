@@ -19,8 +19,6 @@ export const useTaskStore = defineStore('task', () => {
           Authorization: `Bearer ${authStore.token}`
         },
         params
-      }).catch((e: any) => {
-        return { success: false, error: e.message || '获取任务列表失败' } as const
       })
 
       if (!response.success || response.error) {
@@ -33,6 +31,8 @@ export const useTaskStore = defineStore('task', () => {
       total.value = response.data.total
 
       return response.data
+    } catch (error: any) {
+      throw error
     } finally {
       loading.value = false
     }
@@ -46,8 +46,6 @@ export const useTaskStore = defineStore('task', () => {
         headers: {
           Authorization: `Bearer ${authStore.token}`
         }
-      }).catch((e: any) => {
-        return { success: false, error: e.message || '获取任务详情失败' } as const
       })
 
       if (!response.success || response.error) {
@@ -59,6 +57,8 @@ export const useTaskStore = defineStore('task', () => {
       currentTask.value = response.data.task
 
       return response.data.task
+    } catch (error: any) {
+      throw error
     } finally {
       loading.value = false
     }
@@ -66,96 +66,105 @@ export const useTaskStore = defineStore('task', () => {
 
   async function createTask(taskData: Partial<Task>) {
     const authStore = useAuthStore()
-    const response = await $fetch<{ success: boolean; data?: { task: Task }; error?: string }>('/api/tasks', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${authStore.token}`
-      },
-      body: taskData
-    }).catch((e: any) => {
-      return { success: false, error: e.message || '创建任务失败' } as const
-    })
+    try {
+      const response = await $fetch<{ success: boolean; data?: { task: Task }; error?: string }>('/api/tasks', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        },
+        body: taskData
+      })
 
-    if (!response.success || response.error) {
-      throw new Error(response.error || '创建任务失败')
+      if (!response.success || response.error) {
+        throw new Error(response.error || '创建任务失败')
+      }
+
+      if (!response.data) throw new Error('Invalid response')
+
+      tasks.value.unshift(response.data.task)
+
+      return response.data.task
+    } catch (error: any) {
+      throw error
     }
-
-    if (!response.data) throw new Error('Invalid response')
-
-    tasks.value.unshift(response.data.task)
-
-    return response.data.task
   }
 
   async function updateTask(id: number, taskData: Partial<Task>) {
     const authStore = useAuthStore()
-    const response = await $fetch<{ success: boolean; data?: { task: Task }; error?: string }>(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${authStore.token}`
-      },
-      body: taskData
-    }).catch((e: any) => {
-      return { success: false, error: e.message || '更新任务失败' } as const
-    })
+    try {
+      const response = await $fetch<{ success: boolean; data?: { task: Task }; error?: string }>(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        },
+        body: taskData
+      })
 
-    if (!response.success || response.error) {
-      throw new Error(response.error || '更新任务失败')
+      if (!response.success || response.error) {
+        throw new Error(response.error || '更新任务失败')
+      }
+
+      if (!response.data) throw new Error('Invalid response')
+
+      const index = tasks.value.findIndex(t => t.id === id)
+      if (index !== -1) {
+        tasks.value[index] = response.data.task
+      }
+      if (currentTask.value?.id === id) {
+        currentTask.value = response.data.task
+      }
+
+      return response.data.task
+    } catch (error: any) {
+      // 错误消息已经被插件处理过了，直接重新抛出
+      throw error
     }
-
-    if (!response.data) throw new Error('Invalid response')
-
-    const index = tasks.value.findIndex(t => t.id === id)
-    if (index !== -1) {
-      tasks.value[index] = response.data.task
-    }
-    if (currentTask.value?.id === id) {
-      currentTask.value = response.data.task
-    }
-
-    return response.data.task
   }
 
   async function deleteTask(id: number) {
     const authStore = useAuthStore()
-    const response = await $fetch<{ success: boolean; error?: string }>(`/api/tasks/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${authStore.token}`
+    try {
+      const response = await $fetch<{ success: boolean; error?: string }>(`/api/tasks/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        }
+      })
+
+      if (!response.success || response.error) {
+        throw new Error(response.error || '删除任务失败')
       }
-    }).catch((e: any) => {
-      return { success: false, error: e.message || '删除任务失败' } as const
-    })
 
-    if (!response.success || response.error) {
-      throw new Error(response.error || '删除任务失败')
-    }
-
-    tasks.value = tasks.value.filter(t => t.id !== id)
-    if (currentTask.value?.id === id) {
-      currentTask.value = null
+      tasks.value = tasks.value.filter(t => t.id !== id)
+      if (currentTask.value?.id === id) {
+        currentTask.value = null
+      }
+    } catch (error: any) {
+      throw error
     }
   }
 
   async function fetchStats() {
     const authStore = useAuthStore()
-    const response = await $fetch<{ success: boolean; data?: TaskStats; error?: string }>('/api/tasks/stats', {
-      headers: {
-        Authorization: `Bearer ${authStore.token}`
+    try {
+      const response = await $fetch<{ success: boolean; data?: TaskStats; error?: string }>('/api/tasks/stats', {
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        }
+      })
+
+      if (!response.success || response.error) {
+        throw new Error(response.error || '获取统计数据失败')
       }
-    }).catch((e: any) => {
-      return { success: false, error: e.message || '获取统计数据失败' } as const
-    })
 
-    if (!response.success || response.error) {
-      throw new Error(response.error || '获取统计数据失败')
+      if (!response.data) throw new Error('Invalid response')
+
+      stats.value = response.data
+
+      return response.data
+    } catch (error: any) {
+      throw error
     }
-
-    if (!response.data) throw new Error('Invalid response')
-
-    stats.value = response.data
-
-    return response.data
   }
 
   return {
