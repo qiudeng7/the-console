@@ -7,7 +7,10 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.1",
@@ -15,7 +18,9 @@
     "nuxt": "^4.2.2"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.16",
     "drizzle-kit": "^0.31.8",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.16"
   }
 }

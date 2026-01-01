@@ -8,6 +8,15 @@ vi.stubGlobal('ref', vueRef)
 vi.stubGlobal('computed', vueComputed)
 vi.stubGlobal('$fetch', vi.fn())
 
+// Mock H3 functions
+vi.stubGlobal('defineEventHandler', (handler: any) => handler)
+vi.stubGlobal('readBody', vi.fn((event: any) => event._requestBody || Promise.resolve({})))
+vi.stubGlobal('getQuery', vi.fn((event: any) => event._query || {}))
+vi.stubGlobal('getHeader', vi.fn((event: any, key: string) => event.headers?.[key] || null))
+vi.stubGlobal('getRouterParam', vi.fn((event: any, key: string) => event.context?.params?.[key]))
+vi.stubGlobal('setResponseStatus', vi.fn())
+vi.stubGlobal('createError', (error: any) => ({ ...error, name: 'Error' }))
+
 // Mock useRuntimeConfig
 vi.mock('#app', () => ({
   useRuntimeConfig: () => ({
